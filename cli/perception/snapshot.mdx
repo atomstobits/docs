@@ -1,0 +1,63 @@
+---
+title: "paw snapshot: List All Interactive Elements"
+sidebarTitle: "paw snapshot"
+description: "paw snapshot queries the DOM and returns a numbered list of every interactive element on the page, formatted for efficient AI agent consumption."
+---
+
+`paw snapshot` queries the full DOM of the current page and returns a numbered list of every interactive element it finds. The output is intentionally compact: each line contains an index, an element type, and a short label so you — or an LLM — can identify and act on any element with minimal token overhead.
+
+## Syntax
+
+```bash
+paw snapshot
+```
+
+## Sample output
+
+```
+[1] link  More information...
+[2] link  https://www.iana.org/domains/example
+[3] button  Submit
+[4] input  (empty)
+[5] select  Choose an option
+[6] textarea  Enter your message here
+```
+
+## What it returns
+
+`paw snapshot` walks the DOM and includes any element that a user can interact with:
+
+- **Links** (`<a href>`)
+- **Buttons** (`<button>`, `[role="button"]`)
+- **Inputs** (`<input>`, `<textarea>`, `<select>`)
+- **Elements with explicit click handlers** (e.g. `<div onclick>`)
+
+Each element is assigned a sequential index for the current snapshot. Indexes reset every time you call `paw snapshot`, so always take a fresh snapshot after a navigation or significant DOM change.
+
+## Using element numbers
+
+Pass the index number directly to other PAW commands instead of writing a CSS selector. This keeps your commands short and your LLM prompts token-efficient:
+
+```bash
+paw snapshot          # discover elements
+paw click 3           # click [3] button Submit
+paw text 1            # read textContent of [1] link
+paw hover 2           # hover over [2] link
+paw type 4 "hello"    # type into [4] input
+```
+
+<Tip>
+  Using element numbers like `paw click 3` is significantly more token-efficient in LLM prompts than passing full CSS selectors. Reserve selectors for cases where a specific element is not surfaced by the snapshot (e.g. hidden or non-interactive elements).
+</Tip>
+
+## Choosing between snapshot and other perception commands
+
+| Command | Scope | Best for |
+|---|---|---|
+| `paw snapshot` | Full page DOM | Complete page awareness before acting |
+| `paw visible` | Viewport only | Acting on what a user currently sees |
+| `paw nearby` | Radius around cursor | Locally relevant context in a dense UI |
+
+<Note>
+  On very large pages with hundreds of interactive elements, `paw snapshot` output can be long. Use `paw visible` to restrict the list to the current viewport, or `paw nearby` to narrow it further to elements near the cursor.
+</Note>

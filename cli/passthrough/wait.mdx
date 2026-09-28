@@ -1,0 +1,111 @@
+---
+title: "paw wait and paw wait-idle: Synchronize with Page State"
+sidebarTitle: "paw wait"
+description: "paw wait polls until an element appears; paw wait-idle blocks until network activity is quiet. Use them to synchronize AI actions with dynamic page loading."
+---
+
+Dynamic pages — SPAs, React apps, dashboards with live data — update their DOM asynchronously. If you run `paw snapshot` or `paw click` before the content you care about has rendered, you'll get stale results or a "element not found" error. `paw wait` and `paw wait-idle` let you synchronize your script with the page before acting.
+
+Both commands are **pass-through** — no cursor animation, instant execution, blocking until the condition is met.
+
+---
+
+## paw wait
+
+### Syntax
+
+```bash
+paw wait <n|sel>
+```
+
+### Parameters
+
+<ParamField path="n|sel" type="number | string" required>
+  The element to wait for. Pass an integer index from a previous `paw snapshot`, or a CSS selector string.
+</ParamField>
+
+### How it works
+
+`paw wait` polls the DOM at a short interval until the target element is present and visible. Once found, it returns immediately and control passes to the next command. If the element does not appear within the timeout window, `paw wait` exits with a non-zero status code and an error message.
+
+Use `paw wait` after navigation, form submission, or any action that triggers a DOM update you need to act on.
+
+### Examples
+
+```bash
+paw wait "#results"           # wait for #results to appear
+paw wait ".modal-dialog"      # wait for a modal to open
+paw wait 5                    # wait for element [5] to appear
+```
+
+---
+
+## paw wait-idle
+
+### Syntax
+
+```bash
+paw wait-idle [stableMs]
+```
+
+### Parameters
+
+<ParamField path="stableMs" type="number">
+  The number of milliseconds of network silence required before the command returns. Defaults to `500`.
+</ParamField>
+
+### How it works
+
+`paw wait-idle` monitors the page's network activity via CDP and blocks until no new requests have been initiated for at least `stableMs` milliseconds. This covers XHR, `fetch`, WebSocket upgrades, and resource loads triggered after the initial `load` event.
+
+Use `paw wait-idle` after navigation to a SPA, after submitting a form that triggers an API call, or any time you know the page will fire off async requests before settling.
+
+### Examples
+
+```bash
+paw wait-idle                 # wait for 500ms of network silence (default)
+paw wait-idle 2000            # wait for 2 seconds of network silence
+paw wait-idle 100             # minimal wait for fast APIs
+```
+
+---
+
+## Combining both
+
+For the most robust synchronization, chain `paw wait-idle` with `paw wait`:
+
+```bash
+paw goto https://app.example.com
+paw wait-idle 1000            # wait for the SPA to bootstrap
+paw wait "#dashboard"         # wait for the dashboard element to render
+paw snapshot                  # now safe to read the DOM
+```
+
+<CodeGroup>
+```bash After navigation
+paw goto https://app.example.com/reports
+paw wait-idle 1000
+paw wait "#report-table"
+paw snapshot
+```
+
+```bash After a form submit
+paw click "#submit"
+paw wait-idle 500             # let the API call complete
+paw wait ".success-banner"    # confirm the success state rendered
+```
+
+```bash After infinite scroll
+paw scroll down 1000
+paw wait-idle 300             # wait for the next page of results to load
+paw wait ".result-item:nth-child(21)"
+```
+</CodeGroup>
+
+<Tip>
+  When working with SPAs, prefer `paw wait-idle` → `paw wait` over fixed `sleep` delays. It makes your scripts faster on fast connections and more reliable on slow ones.
+</Tip>
+
+<Note>
+  `paw wait` considers an element "present" when it exists in the DOM and is not hidden via `display: none` or `visibility: hidden`. Elements that are off-screen but still in the layout (e.g., `opacity: 0`) will satisfy the condition.
+</Note>

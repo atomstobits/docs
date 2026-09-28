@@ -1,0 +1,90 @@
+---
+title: "paw eval: Run JavaScript on the Page"
+sidebarTitle: "paw eval"
+description: "paw eval executes a JavaScript expression in the page context via CDP Runtime.evaluate. Accepts inline expressions, a .js file path, or stdin."
+---
+
+`paw eval` drops you into the page's JavaScript runtime. It calls `Runtime.evaluate` via CDP, prints the return value to stdout, and — if the expression returns a `Promise` — awaits its resolution before exiting. You can pass code inline, from a `.js` file, or via stdin.
+
+Use `paw eval` when you need to read DOM state, inject helper functions, click elements that don't respond to pointer events, or perform any operation that's easier to express in JavaScript than in PAW's command vocabulary.
+
+## Syntax
+
+```bash
+paw eval <expr|@file.js|->
+```
+
+## Parameters
+
+<ParamField path="expr" type="string">
+  A JavaScript expression to evaluate inline. The result is printed to stdout.
+</ParamField>
+
+<ParamField path="@file.js" type="string">
+  Prefix a file path with `@` to load and execute the contents of a `.js` file (e.g., `@./inject.js`).
+</ParamField>
+
+<ParamField path="-" type="flag">
+  Read the JavaScript from stdin. Pipe code into `paw eval -` for dynamic script generation.
+</ParamField>
+
+## Examples
+
+```bash
+paw eval "document.title"              # returns the page title
+paw eval "window.location.href"        # returns the current URL
+paw eval "document.querySelector('#result').textContent"  # extract text
+paw eval @./inject.js                  # run a script file
+```
+
+<CodeGroup>
+```bash Read DOM state
+paw eval "document.title"
+paw eval "window.location.href"
+paw eval "document.querySelectorAll('a').length"
+paw eval "document.querySelector('#result').textContent"
+```
+
+```bash Trigger JS interactions
+# Click an element that doesn't respond to pointer events
+paw eval "document.querySelector('#submit-btn').click()"
+
+# Set an input value and fire the change event
+paw eval "const el = document.querySelector('#qty'); el.value = '5'; el.dispatchEvent(new Event('change'))"
+```
+
+```bash Run a script file
+# Place reusable helpers in a .js file and inject them
+paw eval @./inject-utils.js
+paw eval @./scrape-table.js
+```
+
+```bash From stdin
+echo 'document.body.children.length' | paw eval -
+
+# Generate a script dynamically
+cat <<'EOF' | paw eval -
+Array.from(document.querySelectorAll('h2'))
+  .map(el => el.textContent.trim())
+  .join('\n')
+EOF
+```
+</CodeGroup>
+
+## Return value
+
+The result of the expression is serialized and printed to stdout. PAW automatically awaits the expression if it returns a `Promise`, so async operations work without any extra plumbing:
+
+```bash
+paw eval "fetch('/api/status').then(r => r.json()).then(d => d.status)"
+```
+
+If the expression produces `undefined` or `null`, nothing is printed.
+
+<Warning>
+  `paw eval` has **full access** to the page's JavaScript context, including cookies, `localStorage`, and any global variables. Only run scripts you trust. Never pipe untrusted user input directly into `paw eval -` without sanitizing it first.
+</Warning>
+
+<Note>
+  `paw eval` is a **pass-through command** — it executes instantly with no cursor animation. It is the recommended escape hatch when a high-level PAW action doesn't suit your needs.
+</Note>

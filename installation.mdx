@@ -1,0 +1,75 @@
+---
+title: "Installing PAW: Requirements and Setup"
+sidebarTitle: "Installation"
+description: "Install PAW globally via npm. Requires Node.js 22+ and an existing Chromium-family browser. Zero runtime dependencies — no browser downloads."
+---
+
+PAW is a Node.js CLI with **zero runtime dependencies**. There is nothing to configure, no browser binaries to download, and no daemon to keep running. You bring Node 22+ and a Chromium-family browser; PAW brings everything else.
+
+<Note>
+  The bare `paw` name on npm is an unrelated abandoned package from 2018. Always install **`paw-core`** (or `paw-browser` for the browser-side companion script).
+</Note>
+
+## Requirements
+
+Before installing, make sure you have the following:
+
+- **Node.js 22 or later** — PAW uses native APIs available from Node 22+. Check your version with `node --version`.
+- **One of:** Brave Browser, Google Chrome, or Microsoft Edge — PAW connects to browsers already installed on your system; it never downloads its own browser.
+- **npm** — bundled with Node.js; used to install PAW globally.
+
+## Install
+
+<CodeGroup>
+
+```bash npm
+npm i -g paw-core
+```
+
+```bash verify
+paw help
+```
+
+</CodeGroup>
+
+The global install exposes the `paw` command on your PATH. Running `paw help` should print the full list of available commands and confirm the installation is working.
+
+## Build from Source
+
+For advanced users who want to contribute, pin to an unreleased commit, or inspect the code before running it:
+
+```bash
+git clone https://github.com/rangersui/paw.git
+cd paw
+npm install
+npm run build
+npm link
+paw help
+```
+
+A few things to keep in mind when building from source:
+
+- The `dist/` directory is `.gitignore`d, so **`npm run build` is required** before the `paw` binary is available. The repository does not ship pre-built output.
+- `npm link` creates a global symlink pointing at your local clone, so changes you make are immediately reflected when you run `paw`.
+- To remove the symlink when you are done: `npm unlink -g paw-core`
+
+## Session State Files
+
+PAW creates two files in your home directory during normal operation:
+
+| File | Purpose |
+|---|---|
+| `~/.paw` | Stores the active debug-port URL for the current session. Every PAW command reads this file to know which browser to connect to. Overwritten each time you run `paw start`. |
+| `~/.pawprint` | Append-only audit log of every action PAW performs — clicks, hovers, evaluations, screenshots, navigations. Human-readable and timestamped. PAW can optionally `PUT` these events to a remote HTTP server if you configure one. |
+
+Neither file contains credentials or sensitive browser data. They are both plain text and safe to inspect at any time.
+
+## Uninstall
+
+To remove PAW from your system:
+
+```bash
+npm uninstall -g paw-core
+```
+
+This removes the `paw` binary from your PATH. Your `~/.paw` session file and `~/.pawprint` audit log are **not** removed automatically — delete them manually if you no longer need them.

@@ -1,0 +1,70 @@
+---
+title: "paw nearby: Elements Near the Cursor"
+sidebarTitle: "paw nearby"
+description: "paw nearby returns interactive elements within a radius of the cursor position. Use --radius and --limit flags to tune results for token-efficient AI prompting."
+---
+
+`paw nearby` returns a list of interactive elements whose bounding boxes fall within a given pixel radius of the current cursor position. It gives your AI agent a spatially scoped view of the page — only the elements that are locally relevant to where the cursor currently is, rather than the entire DOM or even the full viewport.
+
+## Syntax
+
+```bash
+paw nearby [--radius <px>] [--limit <n>]
+```
+
+## Parameters
+
+<ParamField query="--radius" type="number" default="200">
+  The search radius in pixels, measured from the cursor's current position to the nearest edge of each candidate element's bounding rect. Increase this value to cast a wider net; decrease it to focus tightly on the immediate vicinity.
+</ParamField>
+
+<ParamField query="--limit" type="number" default="10">
+  The maximum number of elements to return, sorted by distance from the cursor (nearest first). Lowering this value is useful in dense UIs where you only want the closest few elements.
+</ParamField>
+
+## Output format
+
+The output format is the same as `paw snapshot` and `paw visible`:
+
+```
+[1] button  Add to cart
+[2] input   Quantity
+[3] link    Product details
+[4] button  Save for later
+```
+
+Indexes are assigned fresh each time you call `paw nearby` and are independent of indexes returned by other perception commands.
+
+## Use case
+
+`paw nearby` is designed for situations where an AI agent is working in a specific region of a large page. Instead of sending the full snapshot (which may contain hundreds of elements) to the LLM, you move the cursor to the area of interest and call `paw nearby` to get only the elements that are contextually relevant.
+
+This is especially effective for:
+
+- **Forms with many fields** — position the cursor near a section and inspect only that section's inputs.
+- **Data tables** — hover over a row to get its action buttons without noise from the rest of the table.
+- **Sidebars and panels** — isolate navigation or settings controls from main-content elements.
+
+## Example
+
+```bash
+paw move 500 400              # position cursor in the target region
+paw nearby --radius 150 --limit 5
+```
+
+A more complete agent workflow:
+
+```bash
+paw snapshot                  # full page overview
+paw move 760 320              # move cursor to a product card
+paw nearby --radius 100       # inspect just that card's elements
+paw click 1                   # click the closest interactive element
+```
+
+<Tip>
+  Think of `paw move` + `paw nearby` as a "zoom in" operation for your LLM. You give the model a high-level map with `paw snapshot`, then zoom into the relevant area with `paw nearby` before issuing actions. This two-step pattern keeps token usage low while maintaining spatial accuracy.
+</Tip>
+
+<Note>
+  Distance is calculated from the cursor point to the **nearest edge** of each element's bounding rect, so elements that partially overlap the cursor's position will always appear at the top of the list regardless of their overall size.
+</Note>

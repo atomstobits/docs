@@ -1,0 +1,124 @@
+---
+title: "Integrating PAW with AI Agents and LLM Pipelines"
+sidebarTitle: "AI Integration"
+description: "Use PAW as the browser control layer for AI agents. Learn how to feed page state to your LLM and execute commands from model output using paw snapshot and paw batch."
+---
+
+PAW is designed to be the "body" an AI agent uses to interact with the web. Every command writes structured output to stdout, making it straightforward for an LLM to parse page state and issue the next action — no custom browser drivers, no brittle DOM serializers, no third-party runtime dependencies.
+
+## The AI Loop Pattern
+
+The core integration pattern is a tight read-act loop: you capture page state with `paw snapshot`, send it to your model, and execute whatever command the model returns.
+
+<Steps>
+  <Step title="Start the browser session">
+    Launch PAW against the URL your agent needs to work with.
+
+    ```bash
+    paw start brave --url https://example.com
+    ```
+  </Step>
+
+  <Step title="Capture page state">
+    `paw snapshot` prints a numbered list of every interactive element on the page — links, buttons, inputs, and more.
+
+    ```text
+    [1] link "Home"
+    [2] button "Sign in"
+    [3] input[text] "Search"
+    [4] link "Pricing"
+    ```
+  </Step>
+
+  <Step title="Send state to your LLM">
+    Pass the snapshot output to your model along with the task description. The model returns a single PAW command.
+  </Step>
+
+  <Step title="Execute the command">
+    Run the model's output in your shell, then loop back to capture the new state.
+  </Step>
+</Steps>
+
+Here is a minimal shell script wiring these steps together:
+
+```bash
+#!/bin/bash
+# Example: feed snapshot to your LLM and execute its response
+paw start brave --url https://example.com
+while true; do
+  STATE=$(paw snapshot)
+  # Pass STATE to your LLM here, get back a PAW command
+  CMD=$(echo "$STATE" | your-llm-tool --prompt "What PAW command should I run next?")
+  eval $CMD
+done
+```
+
+<Warning>
+  Validate or sandbox `$CMD` before passing it to `eval` in production. LLM output should be treated as untrusted input.
+</Warning>
+
+---
+
+## Token Efficiency with `paw nearby`
+
+On content-heavy pages, a full snapshot can be hundreds of lines — more tokens than most tasks require. `paw nearby` returns only the elements within a pixel radius of the current cursor position, keeping your LLM context small and focused.
+
+```bash
+paw nearby --radius 200 --limit 10
+```
+
+This is especially useful when your agent is already in the right region of the page and only needs to choose between a handful of nearby controls.
+
+<Tip>
+  Combine `paw nearby` with `paw stay` to lock the cursor in a region of interest before querying nearby elements. This prevents cursor drift between commands.
+</Tip>
+
+---
+
+## Waiting for Page Load
+
+Navigation and click events can trigger network activity that takes a moment to settle. Always call `paw wait-idle` after any action that causes the page to change, before you snapshot again. Without it, your LLM may receive a partial or stale view of the page.
+
+```bash
+paw goto https://example.com
+paw wait-idle 1000
+paw snapshot
+```
+
+The optional argument is the number of milliseconds of network silence PAW waits for before declaring the page idle. The default is `500`. Increase it for pages with slow third-party scripts.
+
+---
+
+## Reading Specific Content
+
+Snapshots list elements, but sometimes you need the actual text or markup inside a specific node — for example, to extract a price, read an article, or parse a table. Use `paw text` and `paw html` to pull content directly into your LLM context.
+
+```bash
+paw text 5                          # textContent of element [5]
+paw html "#main-content"            # outerHTML of a CSS selector
+```
+
+<CardGroup cols={2}>
+  <Card title="paw text" icon="align-left">
+    Returns the plain `textContent` of an element. Use this when you want clean, readable text without markup noise.
+  </Card>
+  <Card title="paw html" icon="code">
+    Returns the full `outerHTML` of a node. Use this when your model needs to reason about structure, tables, or nested elements.
+  </Card>
+</CardGroup>
+
+---
+
+## Screenshots for Vision Models
+
+If your model supports image inputs, `paw screenshot` captures the current viewport as a PNG file you can attach to your next prompt.
+
+```bash
+paw screenshot ./frame.png
+```
+
+This is useful for verifying that the page looks as expected before committing to an action, or for feeding visual context to a multimodal model that reasons over layout as well as text.
+
+<Tip>
+  Use `paw batch` to chain multiple commands from a file, reducing WebSocket overhead for multi-step actions. See the [Batch Commands](/guides/batch-commands) guide for details.
+</Tip>

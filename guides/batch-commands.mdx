@@ -1,0 +1,118 @@
+---
+title: "Running PAW Commands in Batch Mode"
+sidebarTitle: "Batch Commands"
+description: "Use paw batch to execute multiple commands in a single CDP WebSocket session, reducing overhead for multi-step automation scripts and AI agent workflows."
+---
+
+By default, each `paw` command opens a new WebSocket connection to the browser, executes, and closes. That connection overhead is negligible for one-off commands, but it adds up quickly in multi-step automation. `paw batch` runs many commands in a single CDP WebSocket session, making it significantly faster and more efficient for anything beyond a few sequential actions.
+
+---
+
+## Basic Batch Usage
+
+You can supply commands to `paw batch` in two ways: from a file or from stdin.
+
+<CodeGroup>
+  ```bash From a file
+  paw batch @commands.txt
+  ```
+
+  ```bash From stdin
+  echo -e 'snapshot\nclick 1' | paw batch -
+  ```
+</CodeGroup>
+
+Commands in the file are written **one verb per line**, without the `paw` prefix. Arguments follow the verb exactly as they would on the command line.
+
+```text commands.txt
+goto https://github.com
+wait-idle 1000
+snapshot
+click 3
+screenshot ./result.png
+```
+
+Run the file with:
+
+```bash
+paw batch @commands.txt
+```
+
+<Note>
+  Batch mode is ideal for AI agents generating multi-step action plans. It also works well in CI pipelines or scheduled automation tasks.
+</Note>
+
+---
+
+## Batch from AI Output
+
+Your AI can generate a complete sequence of PAW commands as part of its planning step, write them to a file, and hand that file to `paw batch` for atomic execution. This pattern avoids the overhead of an interactive loop when the AI already knows all the steps it needs to take.
+
+```bash
+# AI generates commands.txt, then:
+paw batch @commands.txt
+```
+
+This is especially effective when combined with a planning prompt that asks your model to output a numbered action plan in PAW verb syntax before any execution begins.
+
+<Tip>
+  Ask your LLM to produce the full action plan as a `commands.txt` block first. Validate it, then execute it with `paw batch`. This gives you a human-readable audit trail before anything runs.
+</Tip>
+
+---
+
+## Stdin Piping
+
+For inline scripts or dynamically generated sequences, pipe commands directly to `paw batch -` using stdin. This avoids writing a temporary file and keeps your script self-contained.
+
+```bash
+printf 'snapshot\ntext 1\nscreenshot' | paw batch -
+```
+
+You can also use a heredoc for readability in shell scripts:
+
+```bash
+paw batch - <<'EOF'
+goto https://example.com
+wait-idle 1000
+dismiss-cookies
+snapshot
+EOF
+```
+
+---
+
+## Performance Note
+
+Every individual `paw` call in a shell loop pays the cost of spawning a Node.js process, establishing a WebSocket handshake with the browser, and tearing it down again. For five commands that is five handshakes.
+
+With `paw batch`, there is exactly one handshake regardless of how many commands you run. For sequences of ten or more commands, this difference is meaningful — especially in CI environments where startup latency compounds.
+
+<CardGroup cols={2}>
+  <Card title="Shell loop (slow)" icon="arrows-rotate">
+    Each command opens and closes a WebSocket connection. N commands = N handshakes.
+  </Card>
+  <Card title="paw batch (fast)" icon="bolt">
+    One WebSocket connection shared across all commands. N commands = 1 handshake.
+  </Card>
+</CardGroup>
+
+---
+
+## Error Handling
+
+If any command in the batch fails, PAW stops immediately and reports:
+
+- The **failing command** text
+- Its **index** in the sequence (zero-based)
+- The **error message** from the CDP layer
+
+```text
+Batch error at command 3 (click 99): Element index 99 not found in snapshot.
+```
+
+Commands that ran before the failure are not rolled back — side effects like navigation or form input that already happened remain in place. Design your batch files with this in mind: put destructive or irreversible commands at the end of the sequence where possible.
+
+<Warning>
+  There is no automatic retry in batch mode. If a transient failure occurs (such as a network timeout on `wait-idle`), you will need to re-run the batch from the failing command onward or restructure the file to handle the failure case.
+</Warning>

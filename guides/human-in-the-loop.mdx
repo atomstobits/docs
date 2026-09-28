@@ -1,0 +1,99 @@
+---
+title: "Human-in-the-Loop Browser Control with PAW"
+sidebarTitle: "Human-in-the-Loop"
+description: "Alt+drag your mouse to redirect PAW's cursor mid-task. AI commands pause while you hold the wheel and resume when you release, enabling seamless human override."
+---
+
+PAW is built for scenarios where a human needs to stay in control while an AI handles routine browser tasks. Rather than running in a hidden headless window, PAW operates inside your real, visible browser — so you can watch every action as it happens and step in at any moment without stopping the automation entirely.
+
+## How Shared Control Works
+
+PAW injects a visible, animated cursor into the page using a Bézier-curve motion path. This cursor is the same one your AI agent controls. Because it moves slowly and deliberately, you always know what is about to happen before it does.
+
+<Steps>
+  <Step title="PAW runs its command queue">
+    Your AI issues commands — `paw click 3`, `paw type`, `paw goto` — and PAW's visible cursor moves through them one at a time.
+  </Step>
+
+  <Step title="You hold Alt and drag to intervene">
+    At any point while commands are running, hold **Alt** and drag your real mouse cursor. PAW detects the input and moves its injected cursor to match your pointer in real time.
+  </Step>
+
+  <Step title="AI commands pause automatically">
+    While you are holding Alt and moving the cursor, PAW suspends the pending command queue. No clicks fire, no text is typed.
+  </Step>
+
+  <Step title="You release, AI resumes">
+    When you release, PAW resumes execution from your new cursor position. The AI continues its task from exactly where you left off — or from the element you've guided it to.
+  </Step>
+</Steps>
+
+---
+
+## When to Use Human Override
+
+Human override is not a last resort — it is a first-class part of PAW's design. Here are the most common situations where you will want to reach for it:
+
+<CardGroup cols={2}>
+  <Card title="Correct a wrong target" icon="arrow-pointer">
+    If the AI is about to click the wrong element, redirect the cursor before the click fires. The orange highlight preview gives you a clear warning.
+  </Card>
+  <Card title="Complete a CAPTCHA or 2FA" icon="shield-halved">
+    Pause the AI, solve the challenge yourself, and release. PAW resumes once the page is ready.
+  </Card>
+  <Card title="Guide to an unknown region" icon="map">
+    Point the AI to a part of the page it has not seen — a sidebar, a modal, or content loaded after scroll.
+  </Card>
+  <Card title="Correct mid-task navigation" icon="route">
+    If the AI navigates to the wrong URL or clicks into the wrong section, redirect it before it gets further off course.
+  </Card>
+</CardGroup>
+
+---
+
+## Observing AI Actions
+
+PAW's default speed preset is **normal**, which means approximately 1.4 seconds per click. This is intentional. The deliberate pacing gives you time to:
+
+- Read which element is highlighted before the click fires
+- Decide whether to intervene
+- Watch the page's response to each action
+
+Before each click, PAW renders an **orange highlight** around the target element. This preview appears during the Bézier cursor travel and disappears when the click is dispatched. If you see it land on the wrong target, you have a window to hold Alt and redirect.
+
+<Info>
+  You can adjust the speed at any time using speed presets. The `fast` preset (~280 ms/click) is suited for automated pipelines where you trust the AI's decisions. The `slow` preset (~3.5 s/click) is best for demos, walkthroughs, and situations where careful human review is required.
+</Info>
+
+---
+
+## The Stay and Unstay Commands
+
+Sometimes you want to lock the cursor in place — for example, while you examine a region of the page or wait for the AI to process a snapshot. `paw stay` pins the cursor at its current position so it does not drift between commands.
+
+```bash
+paw stay      # Pin the cursor in its current position
+paw unstay    # Release the cursor from its pinned position
+```
+
+<Note>
+  `paw stay` does not pause the command queue. It only prevents the cursor from moving. Commands that do not require cursor movement — like `paw snapshot` or `paw text` — continue to execute normally.
+</Note>
+
+---
+
+## Trust Through Visibility
+
+Most browser automation tools are designed to be invisible: they run in headless mode, suppress animations, and complete tasks as fast as the CPU allows. PAW takes the opposite approach.
+
+Every action is visible. Every click is telegraphed with a preview highlight. Every cursor move follows a curved, human-like path at a pace you can follow. This is not a limitation — it is a deliberate design choice that makes PAW trustworthy in contexts where humans and AI share a workspace.
+
+When you can see exactly what the AI is doing, you can correct it early, learn from its mistakes, and build confidence in its behaviour over time. PAW treats visibility as a safety mechanism, not an obstacle to performance.
+
+<Tip>
+  For demos or recorded walkthroughs, use PAW with the `slow` speed preset to make actions maximally clear to your audience.
+
+  ```bash
+  paw set-speed slow
+  ```
+</Tip>

@@ -1,47 +1,103 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "Get Started with PAW in 5 Minutes"
+sidebarTitle: "Quickstart"
+description: "Install PAW, connect to your browser, and run your first AI-controlled click in under 5 minutes. Requires Node.js 22+ and a Chromium-family browser."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
+By the end of this guide you will have launched a live browser session with PAW, listed the interactive elements on a page, and triggered your first animated AI-controlled click — all in under five minutes. You will need Node.js 22 or later and any Chromium-family browser (Brave, Chrome, or Edge) already installed on your machine.
 
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
-
-## Prerequisites
-
-Before you begin, you must have:
-
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
-
-## Get started
+<Tip>
+  PAW connects to browsers you already have installed — it never downloads a browser binary.
+</Tip>
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+  <Step title="Install PAW">
+    Install PAW globally via npm:
 
     ```bash
-    npm install your-package
+    npm i -g paw-core
     ```
+
+    Node.js 22 or later is required. Confirm the installation succeeded by running:
+
+    ```bash
+    paw help
+    ```
+
+    You should see the full list of available commands printed to your terminal.
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
+
+  <Step title="Launch a browser session">
+    Start a new PAW session against an existing browser. Pass the browser name and an optional starting URL:
 
     ```bash
-    your-cli init
+    paw start brave --url https://example.com
     ```
+
+    You can substitute `brave` with `chrome` or `edge` depending on which browser you have installed. PAW will:
+
+    - Launch the browser with `--remote-debugging-port` enabled
+    - Connect to it over the Chrome DevTools Protocol (CDP)
+    - Write the active debug-port URL to `~/.paw` so every subsequent command knows where to connect
+
+    A new browser window will appear on your screen with the page already loaded.
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
+
+  <Step title="List interactive elements">
+    Scan the current page and print a numbered list of every interactive element:
 
     ```bash
-    your-cli start
+    paw snapshot
     ```
+
+    For `https://example.com`, you will see output similar to:
+
+    ```
+    [1] link  More information...
+    [2] link  https://www.iana.org/domains/example
+    ```
+
+    Each entry shows the element index, its role, and its visible label or URL. Use these indices with `paw click` and `paw hover`.
+  </Step>
+
+  <Step title="Click an element">
+    Click element `[1]` using its snapshot index:
+
+    ```bash
+    paw click 1
+    ```
+
+    PAW executes a four-phase animated sequence before the real click fires:
+
+    1. **Walk** — the cursor travels to the element along a randomised Bézier curve
+    2. **Highlight** — a subtle ring appears around the target element
+    3. **Press-shrink** — the cursor shrinks to simulate a physical press
+    4. **Fire** — the real CDP `Input.dispatchMouseEvent` is sent to Chromium
+
+    The whole sequence takes roughly 1.4 seconds — a deliberate, human-paced cadence so you can follow every action in real time. The action is also appended to your audit log at `~/.pawprint`.
+  </Step>
+
+  <Step title="Explore more commands">
+    You now have a working PAW session. A few commands worth trying next:
+
+    ```bash
+    # Hover over element [2] without clicking
+    paw hover 2
+
+    # Evaluate arbitrary JavaScript in the page context
+    paw eval "document.title"
+
+    # Capture a screenshot of the current viewport
+    paw screenshot
+
+    # Close the session and release the browser
+    paw close
+    ```
+
+    For the full command reference, see the [CLI Reference](/cli/session/start).
   </Step>
 </Steps>
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
-
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+<Note>
+  PAW uses `~/.paw` to store session state (the active debug-port URL) and `~/.pawprint` as the append-only audit log for every action performed during a session.
+</Note>

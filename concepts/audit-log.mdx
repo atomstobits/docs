@@ -1,0 +1,125 @@
+---
+title: "PAW Audit Log: Tracking Every AI Action"
+sidebarTitle: "Audit Log"
+description: "PAW logs every browser action to ~/.pawprint as an append-only local audit trail, with optional HTTP PUT mirroring to any remote server for review agents."
+---
+
+Every command PAW executes is logged. Before the CDP event fires, after it completes, the record exists — timestamped, labelled with the verb and target, and appended to a local file that PAW never deletes. This creates an immutable history of exactly what your AI agent did in your browser, giving you a foundation for debugging, compliance, and oversight.
+
+## Local Audit Log (`~/.pawprint`)
+
+`~/.pawprint` is an append-only plain-text file. PAW writes one entry per action, in chronological order, and never truncates or rotates the file automatically.
+
+Each entry captures:
+
+- **Timestamp** — ISO 8601 UTC
+- **Verb** — the PAW command that ran (`click`, `type`, `goto`, etc.)
+- **Target** — the element number, selector, URL, or value acted on
+- **Outcome** — `ok` on success, or an error description on failure
+
+The file persists across sessions. Every time you run PAW — against any browser, any tab — new entries are appended to the same `~/.pawprint` file, building a continuous history.
+
+## Reading the Log
+
+You can inspect the log at any time with standard Unix tools. To watch actions appear in real time as PAW executes them:
+
+```bash
+tail -f ~/.pawprint
+```
+
+To review the last 50 actions:
+
+```bash
+tail -n 50 ~/.pawprint
+```
+
+To search for all click actions on a specific session date:
+
+```bash
+grep "2025-01-15" ~/.pawprint | grep "click"
+```
+
+## Log Format
+
+Each line in `~/.pawprint` follows this structure:
+
+```
+<ISO-timestamp>  <verb>  <target>  <outcome>
+```
+
+Here is a representative sequence from a real session:
+
+```
+2025-01-15T10:31:58Z  start    brave --url https://github.com        ok
+2025-01-15T10:32:01Z  snapshot (32 elements indexed)                 ok
+2025-01-15T10:32:04Z  click    [3] "Sign in"                         ok
+2025-01-15T10:32:07Z  type     [4] username "myuser"                 ok
+2025-01-15T10:32:09Z  type     [5] password "********"               ok
+2025-01-15T10:32:11Z  click    [6] "Submit"                          ok
+2025-01-15T10:32:14Z  goto     https://github.com/dashboard          ok
+2025-01-15T10:32:16Z  click    [11] "New repository"                 ok
+2025-01-15T10:32:19Z  type     [2] repo-name "my-new-project"        ok
+2025-01-15T10:32:22Z  click    [9] "Create repository"               ok
+```
+
+Passwords and sensitive field values are masked as `"********"` in the log automatically.
+
+## Remote Mirroring (Optional)
+
+PAW can mirror every log entry to a remote HTTP server in real time by passing a `--log-url` flag or setting the `PAW_LOG_URL` environment variable. PAW sends each entry as an HTTP `PUT` request to the specified URL immediately after writing it locally.
+
+```bash
+# Mirror all entries to your logging server
+export PAW_LOG_URL=https://logs.your-team.com/paw
+
+paw click 3
+# → appends to ~/.pawprint
+# → PUT https://logs.your-team.com/paw  (body: the log entry)
+```
+
+Any HTTP server that accepts `PUT` requests with a plain-text body works. This enables several powerful patterns:
+
+<CardGroup cols={2}>
+  <Card title="Real-time review agents" icon="robot">
+    A second AI process watches the PUT stream and raises an alert if the first
+    AI takes any action outside its intended scope.
+  </Card>
+  <Card title="Centralized team audit trails" icon="building">
+    All agents on a team write to the same endpoint, giving you a unified log
+    of every automated browser action across the organization.
+  </Card>
+  <Card title="Custom logging backends" icon="server">
+    Route entries to Elasticsearch, a Postgres table, S3, or any custom
+    service — no PAW-specific plugin required.
+  </Card>
+  <Card title="Compliance archiving" icon="shield-check">
+    Retain tamper-evident records of automated browser activity for regulatory
+    or internal audit requirements.
+  </Card>
+</CardGroup>
+
+## Use Cases
+
+**Debugging**
+
+When an AI workflow goes wrong, `~/.pawprint` tells you exactly what happened and in what order. You can replay the sequence step by step to identify where the agent went off track — without relying on screenshots or memory.
+
+```bash
+# Find the last action before an error
+grep "err" ~/.pawprint | tail -5
+```
+
+**Compliance**
+
+Regulated environments often require records of what automated processes did. `~/.pawprint` provides a timestamped, human-readable log of every browser action your agents took, suitable for audit review.
+
+**Review agents**
+
+Because every action is logged before it completes, a second process can watch the stream and intervene. Combine `--log-url` with a lightweight review service to build a two-AI system: one agent acts, one agent checks.
+
+<Note>
+  The audit log at `~/.pawprint` is separate from the output of `paw log`.
+  `paw log` streams the **current page's** console messages and network
+  requests in real time — it is a window into the browser, not a record of
+  PAW's own actions. `~/.pawprint` records only what PAW itself did.
+</Note>

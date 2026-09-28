@@ -1,0 +1,54 @@
+---
+title: "paw visible: Elements in the Current Viewport"
+sidebarTitle: "paw visible"
+description: "paw visible returns only the interactive elements currently visible in the browser viewport, filtering out off-screen elements to reduce AI token usage."
+---
+
+`paw visible` works like `paw snapshot` but restricts its output to the interactive elements that fall within the browser's current viewport. Elements that exist in the DOM but are scrolled out of view are excluded, giving you a focused, token-efficient list of exactly what a human would see on screen right now.
+
+## Syntax
+
+```bash
+paw visible
+```
+
+## Output format
+
+The output format is identical to `paw snapshot` — a numbered list of interactive elements with their type and label:
+
+```
+[1] link  Home
+[2] link  About
+[3] button  Search
+[4] input  (empty)
+[5] button  Sign in
+```
+
+Index numbers are assigned fresh each time you call `paw visible`. They are independent of the indexes returned by `paw snapshot`, so avoid mixing numbers from different commands in the same script step.
+
+## `paw visible` vs `paw snapshot`
+
+| | `paw snapshot` | `paw visible` |
+|---|---|---|
+| **Scope** | Full page DOM | Current viewport only |
+| **Token cost** | Higher on long pages | Lower — filtered output |
+| **Use when** | You need complete page awareness | You want to act on what's currently visible |
+| **After scroll** | Same result (whole page) | Updates to reflect new viewport contents |
+
+Choose `paw snapshot` when your agent needs to reason about the entire page structure — for example, to decide whether to scroll down or to locate a form buried further down the document.
+
+Choose `paw visible` when your agent should behave like a human: only interacting with what is currently on screen, scrolling deliberately to reveal more content.
+
+## Working with `paw show`
+
+`paw visible` pairs naturally with `paw show`. If you know an element exists but it is off-screen, scroll it into view first and then verify it appears in the viewport:
+
+```bash
+paw show "Privacy Policy"     # scroll the element into view
+paw visible                   # confirm it now appears in the viewport
+paw click 4                   # act on the newly visible element
+```
+
+<Tip>
+  In AI agent loops, prefer `paw visible` over `paw snapshot` as your default perception command. It keeps the context window smaller and naturally encourages the agent to scroll through the page incrementally — mirroring the way a human would navigate.
+</Tip>

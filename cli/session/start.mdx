@@ -1,0 +1,82 @@
+---
+title: "paw start: Launch a Browser Session"
+sidebarTitle: "paw start"
+description: "paw start launches Brave, Chrome, or Edge with the CDP debug port open and writes the session to ~/.paw. Flags: --url, --port."
+---
+
+`paw start` opens a Chromium-based browser with the Chrome DevTools Protocol (CDP) remote debugging port enabled, waits until the browser is ready to accept connections, and writes the session's WebSocket URL to `~/.paw`. Once the session file exists, every subsequent PAW command knows which browser to talk to.
+
+## Syntax
+
+```bash
+paw start [brave|chrome|edge] [--url <url>] [--port <port>]
+```
+
+## Parameters
+
+<ParamField path="browser" type="string">
+  The browser to launch. Accepted values are `brave`, `chrome`, and `edge`. PAW searches your `PATH` and common installation directories and defaults to the first browser it finds if you omit this argument.
+</ParamField>
+
+<ParamField query="--url" type="string">
+  The URL to open immediately after launch. When omitted, the browser opens to its default homepage or new-tab page.
+</ParamField>
+
+<ParamField query="--port" type="number" default="9222">
+  The CDP remote debugging port PAW passes to the browser via `--remote-debugging-port`. Change this when port `9222` is already in use on your machine.
+</ParamField>
+
+## What it does
+
+When you run `paw start`, PAW:
+
+1. Resolves the browser binary path for the requested browser (or auto-detects one).
+2. Spawns the browser process with `--remote-debugging-port=<port>`.
+3. Polls the CDP endpoint until the browser signals it is ready.
+4. Writes the CDP WebSocket URL to `~/.paw` so every subsequent PAW command can attach automatically.
+
+<Note>
+  If the browser was already running **without** a debug port before you ran `paw start`, PAW cannot inject itself into that existing process. Use `paw connect` for browsers that were launched manually or by another tool.
+</Note>
+
+## Examples
+
+<CodeGroup>
+
+```bash Launch Brave
+paw start brave
+```
+
+```bash Open a URL in Chrome
+paw start chrome --url https://github.com
+```
+
+```bash Use a custom port with Edge
+paw start edge --port 9333
+```
+
+</CodeGroup>
+
+## After starting
+
+Once `paw start` exits successfully, you can immediately run perception and interaction commands against the open page. A common first step is calling `paw snapshot` to get a numbered list of every interactive element:
+
+```bash
+paw start chrome --url https://example.com
+paw snapshot
+```
+
+Sample output:
+
+```
+[1] link  More information...
+[2] link  https://www.iana.org/domains/example
+[3] button  Submit
+[4] input  (empty)
+```
+
+You can then pass those numbers directly to commands like `paw click 1` or `paw text 2`.
+
+<Tip>
+  Store the port you used (if non-default) in your script or `.env` file. Every PAW command accepts `--port` so you can manage multiple browser sessions on different ports simultaneously.
+</Tip>

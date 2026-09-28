@@ -1,0 +1,126 @@
+---
+title: "Managing Cookies and Cookie Consent Banners in PAW"
+sidebarTitle: "Cookies & CMPs"
+description: "Use paw dismiss-cookies to auto-accept or reject cookie consent banners from 11 known CMPs, and learn how to work with browser cookies in your PAW sessions."
+---
+
+Cookie consent banners (CMPs) are one of the most reliable ways for automated workflows to get stuck before they even begin. PAW has built-in handling for 11 major CMP patterns, letting you accept or reject consent dialogs in a single command and get on with the actual task.
+
+---
+
+## Dismissing Cookie Banners
+
+PAW detects CMP widgets by matching known patterns in the page's DOM and shadow DOM. The three `dismiss-cookies` flags cover the most common actions you will need:
+
+```bash
+paw dismiss-cookies           # Click Accept on the detected CMP
+paw dismiss-cookies --reject  # Click Reject or Decline instead
+paw dismiss-cookies --list    # Print the CMPs PAW knows about without clicking anything
+```
+
+<CardGroup cols={3}>
+  <Card title="dismiss-cookies" icon="check">
+    Finds the consent banner and clicks the Accept or Allow button. Useful when you need full cookie access to proceed.
+  </Card>
+  <Card title="--reject" icon="ban">
+    Clicks Reject, Decline, or "Use necessary cookies only". Useful for privacy-conscious workflows or testing reject paths.
+  </Card>
+  <Card title="--list" icon="list">
+    Prints the 11 CMP patterns PAW recognises, without interacting with the page. Use this to check what PAW knows about.
+  </Card>
+</CardGroup>
+
+### Supported CMPs
+
+PAW ships with built-in patterns for the following consent management platforms:
+
+- **OneTrust** — used by enterprise and media sites
+- **Cookiebot** — common on European e-commerce and publishing sites
+- **Didomi** — used across French and European digital platforms
+- And **8 more** built-in patterns covering other major CMP providers
+
+<Info>
+  Run `paw dismiss-cookies --list` at any time to see the full set of supported patterns and their detection signatures.
+</Info>
+
+---
+
+## Typical Pattern
+
+The standard flow for any site that may show a cookie banner is: navigate, wait for the page to settle, dismiss the banner, then snapshot.
+
+```bash
+paw start brave --url https://example.com
+paw wait-idle 1000
+paw dismiss-cookies           # Accept the cookie banner
+paw snapshot                  # Now page is ready
+```
+
+If the site does not have a recognised banner, `paw dismiss-cookies` exits cleanly with no error — so it is safe to include in all automation scripts without conditional logic.
+
+<Tip>
+  Add `paw dismiss-cookies` to the top of every `paw batch` file as a standard first step. It is a no-op on pages without a known CMP, and it saves you from debugging stuck agents on pages that do.
+</Tip>
+
+---
+
+## Working with Browser Cookies
+
+Because PAW connects to your real browser profile — not a sandboxed headless instance — you already have access to every cookie stored in that profile. This has a few practical consequences:
+
+<CardGroup cols={2}>
+  <Card title="No login replay needed" icon="right-to-bracket">
+    Sites you are already signed into are immediately accessible. PAW inherits your session cookies automatically.
+  </Card>
+  <Card title="Cookies persist between sessions" icon="database">
+    When you close and reopen PAW, your cookies are still there. You do not need to re-authenticate between runs.
+  </Card>
+  <Card title="Session cookies survive restarts" icon="arrows-rotate">
+    As long as the browser window stays open, session-scoped cookies remain active.
+  </Card>
+  <Card title="Profile isolation" icon="user-shield">
+    Each browser profile maintains its own cookie jar. Point PAW at a specific profile to isolate session state between projects.
+  </Card>
+</CardGroup>
+
+---
+
+## Logging In Programmatically
+
+For fresh sessions or profiles without existing credentials, use `paw type` and `paw click` to fill and submit login forms exactly as a user would.
+
+```bash
+paw goto https://app.example.com/login
+paw wait-idle 500
+paw type "#email" "user@example.com"
+paw type "#password" "mysecretpassword"
+paw click "button[type=submit]"
+paw wait-idle 2000
+```
+
+After this sequence, the browser holds a valid authenticated session. All subsequent `paw` commands in the same session — or any future session using the same profile — will have access to that authenticated state.
+
+<Warning>
+  Do not hard-code credentials in scripts you commit to version control. Use environment variables or a secrets manager and interpolate them at runtime.
+
+  ```bash
+  paw type "#email" "$APP_EMAIL"
+  paw type "#password" "$APP_PASSWORD"
+  ```
+</Warning>
+
+---
+
+## Page Logs for Debugging Cookies
+
+If you suspect cookies are being blocked, rejected, or causing redirects, use `paw log` to inspect the network traffic directly from the CDP layer.
+
+```bash
+paw log --type fetch
+```
+
+This prints a filtered view of fetch and XHR requests, including request headers where `Cookie` values are visible and response headers where `Set-Cookie` instructions appear. It is the fastest way to confirm whether a login flow is actually setting the cookies you expect.
+
+<Tip>
+  Because PAW uses your real browser profile, you can complete MFA or CAPTCHA challenges manually in the browser window and then hand control back to PAW. The authenticated state is immediately available — no special handoff is required.
+</Tip>

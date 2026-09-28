@@ -1,0 +1,49 @@
+---
+title: "paw close: End the PAW Session"
+sidebarTitle: "paw close"
+description: "paw close removes the ~/.paw session file, detaching PAW from the browser. The browser continues running; only the session reference is cleared."
+---
+
+`paw close` ends the current PAW session by deleting `~/.paw`, the file that stores the CDP WebSocket URL for the attached browser. After you run `paw close`, PAW commands that require an active session will fail until you run `paw start` or `paw connect` again. The browser itself is **not** affected — it keeps running exactly as before.
+
+## Syntax
+
+```bash
+paw close
+```
+
+## What it does
+
+`paw close` performs a single action: it removes `~/.paw`. No network calls are made, no browser processes are sent signals, and no tabs are closed. The CDP debug port on the browser remains open, so you can re-attach at any time with `paw connect`.
+
+<Note>
+  `paw close` does **not** close the browser window or terminate the browser process. If you want to quit the browser entirely, close it through the OS or use your browser's own quit mechanism after running `paw close`.
+</Note>
+
+## When to use `paw close`
+
+- You have finished your automation task and want to clean up the session reference.
+- Your script is ending and you want to leave the browser open for a human to inspect.
+- You need to switch PAW to a different browser instance and want a clean slate before calling `paw connect`.
+- You are resetting a stale or corrupted `~/.paw` file.
+
+<Warning>
+  If `~/.paw` is missing when you run other PAW commands, those commands will report that no active session exists. Always run `paw start` or `paw connect` before issuing perception or interaction commands.
+</Warning>
+
+## Example workflow
+
+The following script launches a browser, performs a simple interaction, captures a screenshot, and then closes the PAW session:
+
+```bash
+paw start brave --url https://example.com
+paw click 1
+paw screenshot ./done.png
+paw close
+```
+
+After `paw close` the browser window remains open, but PAW is no longer attached. A human (or another `paw connect` call) can take over from there.
+
+<Tip>
+  In automated pipelines where you want a fresh session every run, add `paw close` at the end of your script (or in a `finally` block in a wrapper script) to ensure the session file is always cleaned up, even if earlier steps fail.
+</Tip>

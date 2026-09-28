@@ -1,0 +1,102 @@
+---
+title: "How PAW Works: CDP, Sessions, and the Cursor"
+sidebarTitle: "How PAW Works"
+description: "PAW connects to your existing browser over CDP, injects an animated SVG cursor, and executes every action with human-visible animation and a local audit trail."
+---
+
+PAW is a zero-dependency CLI that drives your browser by speaking the same protocol your browser's own developer tools use. There are no bundled browser binaries, no Playwright runtimes, and no external packages — just your existing browser, a WebSocket, and PAW's Node.js process talking directly over the Chrome DevTools Protocol (CDP).
+
+## The CDP Connection
+
+Chrome DevTools Protocol is the low-level wire format that powers browser developer tools, remote debugging, and headless automation. When you start a Chromium-family browser (Brave, Chrome, or Edge) with the `--remote-debugging-port` flag, the browser opens a WebSocket endpoint and waits for instructions.
+
+PAW connects to that endpoint directly using Node.js's native `WebSocket` implementation — no third-party dependencies required. Every mouse event, keyboard stroke, navigation command, and DOM query is encoded as a raw CDP message and sent over that single connection.
+
+```bash
+# PAW starts the browser for you with the right flag…
+paw start brave
+
+# …or you can point PAW at a browser you already launched manually
+paw connect
+```
+
+<Info>
+  PAW does **not** use Playwright, Puppeteer, Selenium, or the Model Context
+  Protocol (MCP). It speaks raw CDP directly over a native Node.js WebSocket.
+  This is why PAW has zero runtime dependencies and installs in seconds.
+</Info>
+
+## The Session File
+
+After a successful connection, PAW writes a single line to `~/.paw` — the CDP WebSocket URL of the active browser tab. Every subsequent PAW command reads this file to know exactly which tab to control.
+
+```
+ws://127.0.0.1:9222/devtools/page/ABCD1234...
+```
+
+You never need to manage this file manually. `paw start` and `paw connect` write it; `paw close` removes it. If the file is missing when you run a command, PAW exits with a clear message telling you to run `paw start` or `paw connect` first.
+
+## The Injected Cursor
+
+Before every mouse action, PAW injects a small SVG cursor element into the live page via CDP. This cursor starts at its last known position and travels to the target element along a **Bézier curve** — the same kind of smooth, slightly randomized arc a human hand traces across a screen.
+
+The full animation sequence for a click looks like this:
+
+<Steps>
+  <Step title="Cursor walks to target">
+    The SVG cursor animates along a Bézier curve from its current position to
+    the target element's center.
+  </Step>
+  <Step title="Element highlighted">
+    The target element receives an orange outline so you can see exactly what
+    PAW is about to interact with.
+  </Step>
+  <Step title="Press shrink">
+    The cursor visually shrinks to simulate a physical press, giving a clear
+    "about to click" signal.
+  </Step>
+  <Step title="CDP mouse event fires">
+    The real `Input.dispatchMouseEvent` CDP command is sent to the browser —
+    this is the actual click the page receives.
+  </Step>
+  <Step title="Highlight removed">
+    The orange outline is cleared and PAW pauses briefly before the next
+    action.
+  </Step>
+</Steps>
+
+Speed is controlled by the `--speed` flag or the `PAW_SPEED` environment variable. The default preset (`normal`, ~1.4 s per action) is deliberately paced so a human watching the screen can follow every step.
+
+## Element Numbering
+
+Targeting elements by CSS selector works, but it is verbose and expensive for AI agents operating under token limits. PAW offers a numbered index system instead.
+
+Running `paw snapshot` queries the DOM for every interactive element — links, buttons, inputs, selects, and anything with a click handler — and prints a compact numbered list:
+
+```
+[1]  <a>  "Home"                /
+[2]  <a>  "Documentation"       /docs
+[3]  <button>  "Sign in"
+[4]  <input>   placeholder="Search…"
+```
+
+You (or your AI agent) can then reference elements by number in any action command:
+
+```bash
+paw click 3          # clicks [3] Sign in
+paw type 4 "paw"     # types into [4] Search input
+```
+
+Numbers are stable for the lifetime of the snapshot. Re-run `paw snapshot` any time the page changes to refresh the index.
+
+## The Audit Trail
+
+Every action PAW executes is appended to `~/.pawprint` with a timestamp, the command verb, the target, and the outcome. This file is never auto-cleared by PAW — it is an **append-only audit log** that accumulates across all sessions.
+
+```
+2025-01-15T10:32:01Z  click    [3] Sign in        ok
+2025-01-15T10:32:03Z  type     [4] "paw"           ok
+2025-01-15T10:32:04Z  goto     https://example.com ok
+```
+
+You can tail it in real time, parse it in scripts, or mirror it to a remote HTTP server with `--log-url` for centralized review. See the [Audit Log](/concepts/audit-log) page for the full format and remote-mirroring setup.

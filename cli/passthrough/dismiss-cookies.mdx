@@ -1,0 +1,98 @@
+---
+title: "paw dismiss-cookies: Handle Cookie Consent Banners"
+sidebarTitle: "paw dismiss-cookies"
+description: "paw dismiss-cookies auto-accepts or rejects cookie consent banners from 11 built-in CMP patterns including OneTrust, Cookiebot, and Didomi."
+---
+
+Cookie consent banners (CMPs — Consent Management Platforms) appear on nearly every public website and frequently block the elements you need to interact with. `paw dismiss-cookies` detects and handles them automatically using 11 built-in CMP patterns, so you can get a clean DOM before running `paw snapshot` or clicking page content.
+
+`paw dismiss-cookies` is a **pass-through command** — it evaluates and acts instantly with no cursor animation.
+
+## Syntax
+
+```bash
+paw dismiss-cookies [--reject] [--list]
+```
+
+## Parameters
+
+<ParamField path="--reject" type="flag">
+  Click the **Decline** or **Reject** button instead of Accept. Useful when you want to test the page's behaviour with non-essential cookies disabled.
+</ParamField>
+
+<ParamField path="--list" type="flag">
+  Print the names and selectors of all 11 supported CMP patterns to stdout **without clicking anything**. Use this to verify coverage before running your script.
+</ParamField>
+
+## Supported CMPs
+
+`paw dismiss-cookies` includes built-in patterns for **OneTrust**, **Cookiebot**, **Didomi**, and 8 additional widely-deployed consent platforms. Run `paw dismiss-cookies --list` to see the full set with their detection selectors.
+
+## Examples
+
+```bash
+paw dismiss-cookies            # accept cookies on the detected CMP
+paw dismiss-cookies --reject   # decline / reject cookies
+paw dismiss-cookies --list     # print supported CMPs without clicking
+```
+
+## Typical usage pattern
+
+Run `paw dismiss-cookies` early in your script — right after navigation and idle-wait, before you take a snapshot or click any page element:
+
+<Steps>
+  <Step title="Navigate to the page">
+    ```bash
+    paw goto https://example.com
+    ```
+  </Step>
+  <Step title="Wait for the page to settle">
+    ```bash
+    paw wait-idle 500
+    ```
+  </Step>
+  <Step title="Dismiss the cookie banner">
+    ```bash
+    paw dismiss-cookies
+    ```
+  </Step>
+  <Step title="Snapshot the clean DOM">
+    ```bash
+    paw snapshot
+    ```
+  </Step>
+</Steps>
+
+As a one-liner pipeline:
+
+```bash
+paw goto https://example.com && paw wait-idle 500 && paw dismiss-cookies && paw snapshot
+```
+
+## Checking supported CMPs
+
+```bash
+paw dismiss-cookies --list
+```
+
+This prints each supported CMP, its detection method, and the selectors used for Accept and Reject buttons — helpful when you are troubleshooting a banner that was not automatically dismissed.
+
+<Note>
+  If the page does not have a recognised CMP banner, `paw dismiss-cookies` exits with a zero status code and prints nothing. Your script continues normally — you do not need to guard against this case.
+</Note>
+
+<Tip>
+  Run `paw dismiss-cookies` **before** `paw snapshot`. Cookie banners are typically rendered on top of page content using high `z-index` overlays, which means the elements you want to interact with will not appear in the snapshot until the banner is gone.
+</Tip>
+
+<Warning>
+  If you are testing cookie-consent compliance (e.g., verifying that analytics do not fire when cookies are rejected), use `--reject` and then check `paw log --type fetch` to inspect network traffic.
+
+  ```bash
+  paw goto https://example.com
+  paw wait-idle 500
+  paw dismiss-cookies --reject
+  paw wait-idle 1000
+  paw log --type fetch
+  ```
+</Warning>

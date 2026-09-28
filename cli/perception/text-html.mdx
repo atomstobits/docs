@@ -1,0 +1,125 @@
+---
+title: "paw text and paw html: Extract Page Content"
+sidebarTitle: "Text & HTML"
+description: "paw text returns an element's textContent; paw html returns outerHTML. Use these commands to extract content for LLM context or to verify page state."
+---
+
+PAW provides four complementary commands for reading page content without interacting with it: `paw text`, `paw html`, `paw screenshot`, and `paw position` / `paw box`. Together they let you pull structured text, raw markup, visual snapshots, and spatial coordinates out of the browser for use in LLM context, assertions, or debugging.
+
+---
+
+## paw text
+
+`paw text` returns the `textContent` of a target element — all visible (and hidden) text within that element, stripped of HTML tags. Use it to read labels, headings, paragraph copy, form field values, or any other text on the page.
+
+### Syntax
+
+```bash
+paw text <n|sel>
+```
+
+### Parameters
+
+<ParamField path="target" type="string" required>
+  An element index number from a recent `paw snapshot` / `paw visible` call, or any CSS selector string. When a selector matches multiple elements, `paw text` returns the `textContent` of the first match.
+</ParamField>
+
+### Examples
+
+```bash
+paw text 3                    # textContent of element [3]
+paw text "h1"                 # textContent of the first <h1>
+paw text "#status-message"    # textContent of #status-message
+```
+
+<Tip>
+  Use `paw text` to verify page state after an interaction — for example, read a confirmation message after submitting a form — before proceeding to the next step in your automation.
+</Tip>
+
+---
+
+## paw html
+
+`paw html` returns the `outerHTML` of a target element. When called without a selector it returns the full document's `outerHTML`, giving you the complete HTML source of the current page as the browser has rendered it (including any JavaScript-generated markup).
+
+### Syntax
+
+```bash
+paw html [sel]
+```
+
+### Parameters
+
+<ParamField path="sel" type="string">
+  An optional CSS selector. When omitted, `paw html` returns the `outerHTML` of the entire document (`document.documentElement`).
+</ParamField>
+
+### Examples
+
+```bash
+paw html                      # full document outerHTML
+paw html "#results"           # outerHTML of #results
+paw html "table:first-of-type"  # outerHTML of the first table
+```
+
+<Note>
+  Full-document `paw html` output can be very large on complex pages. Prefer scoped selectors (e.g. `paw html "#main"`) when you only need a section of the page, to keep LLM context manageable.
+</Note>
+
+---
+
+## paw screenshot
+
+`paw screenshot` captures the current browser viewport as a PNG image and saves it to disk. Pass the file to a vision-capable LLM to give it a literal picture of what the page looks like — useful when text extraction alone does not convey layout, colour, or visual state.
+
+### Syntax
+
+```bash
+paw screenshot [path]
+```
+
+### Parameters
+
+<ParamField path="path" type="string" default="./screenshot.png">
+  The file path where the PNG will be saved. Intermediate directories must already exist.
+</ParamField>
+
+### Examples
+
+```bash
+paw screenshot                          # saves to ./screenshot.png
+paw screenshot ./captures/step3.png     # saves to a specific path
+```
+
+<Tip>
+  Combine `paw screenshot` with a vision LLM call in your agent loop for a visual sanity check at key decision points — for example, after a navigation or after filling out a multi-step form.
+</Tip>
+
+---
+
+## paw position and paw box
+
+These two commands expose spatial information about the cursor and page elements. They are most useful when building precise automation workflows or when you need to reason about element layout.
+
+### Syntax
+
+```bash
+paw position
+paw box <n|sel>
+```
+
+`paw position` prints the cursor's current coordinates as `x, y`.
+
+`paw box` prints the bounding rectangle of a target element as `x, y, width, height`, where `x` and `y` are the coordinates of the top-left corner relative to the viewport.
+
+### Examples
+
+```bash
+paw position                  # e.g. 512, 384
+paw box 2                     # bounding rect of element [2]
+paw box "#submit-btn"         # bounding rect of #submit-btn
+```
+
+<Note>
+  `paw box` coordinates are viewport-relative. If the element is scrolled out of view, its `y` value may be negative or greater than the viewport height. Use `paw show` to scroll the element into view before calling `paw box` if you need accurate on-screen coordinates.
+</Note>

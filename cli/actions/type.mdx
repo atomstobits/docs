@@ -1,0 +1,127 @@
+---
+title: "paw type and paw keypress: Typing Into Inputs"
+sidebarTitle: "paw type"
+description: "paw type clicks an input element and inserts text using CDP's Input.insertText. Accepts inline text, a file path, or stdin. paw keypress fires key events."
+---
+
+Filling in forms is one of the most common automation tasks. `paw type` clicks the target input using PAW's animated cursor walk, then delivers the text atomically via CDP `Input.insertText`. When you need to trigger keyboard shortcuts or navigate UI components, `paw keypress` fires a single key event without any typing animation.
+
+---
+
+## paw type
+
+### Syntax
+
+```bash
+paw type <n|sel> <text|@file|->
+```
+
+### Parameters
+
+<ParamField path="n|sel" type="number | string" required>
+  The input element to type into. Pass an integer index from `paw snapshot`, or a CSS selector string.
+</ParamField>
+
+<ParamField path="text" type="string" required>
+  The text to insert. One of:
+
+  - **Inline string** — pass the text directly as an argument.
+  - **`@file`** — prefix a file path with `@` to read the text from that file (e.g., `@./message.txt`).
+  - **`-`** — read text from stdin, useful for piping dynamic content.
+</ParamField>
+
+### How it works
+
+`paw type` first performs an animated `paw click` on the target element to focus it, then calls `Input.insertText` with the full string. The entire string is inserted as a single atomic operation — PAW does **not** simulate individual keystrokes. This means:
+
+- It is faster than keystroke simulation and does not trigger per-character `keydown`/`keyup` events.
+- It works well with standard `<input>` and `<textarea>` elements, as well as most rich-text editors that listen for the `input` event.
+- If the target app validates character-by-character (rare), use `paw eval` with `KeyboardEvent` dispatch instead.
+
+### Examples
+
+```bash
+paw type 4 "hello@example.com"        # type inline text into element [4]
+paw type "#username" "myuser"         # target by CSS selector
+paw type "#message" @./message.txt    # read text from a file
+echo "my text" | paw type 4 -         # pipe text from stdin
+```
+
+<CodeGroup>
+```bash Inline text
+paw type "#email" "user@example.com"
+paw type "#password" "s3cr3t!"
+paw type 5 "Search query here"
+```
+
+```bash From a file
+# Useful for long-form content like blog posts or code snippets
+paw type "#body" @./draft-post.txt
+paw type ".code-editor" @./snippet.js
+```
+
+```bash From stdin
+# Generate text dynamically and pipe it in
+echo "Hello, $(date)" | paw type "#note" -
+cat report.md | paw type "#report-field" -
+```
+</CodeGroup>
+
+<Note>
+  `paw type` uses CDP `Input.insertText`, which inserts the full string **atomically**. It does not simulate keystroke-by-keystroke input, so per-character `keydown`/`keyup` events are not fired. For inputs that require those events, use `paw eval` with manual `KeyboardEvent` dispatch.
+</Note>
+
+---
+
+## paw keypress
+
+### Syntax
+
+```bash
+paw keypress <key>
+```
+
+### Parameters
+
+<ParamField path="key" type="string" required>
+  The key identifier to dispatch. Uses the standard [DOM `KeyboardEvent.key`](https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values) values.
+</ParamField>
+
+### How it works
+
+`paw keypress` dispatches a `keydown` + `keyup` pair for the specified key at the current focus point. It does not animate the cursor. Use it after `paw type` to submit a form, or after `paw click` to navigate a keyboard-controlled widget.
+
+### Common keys
+
+| Key string    | Description                     |
+|---------------|---------------------------------|
+| `Enter`       | Submit forms, confirm dialogs   |
+| `Tab`         | Move focus to next field        |
+| `Escape`      | Close modals, cancel actions    |
+| `ArrowDown`   | Navigate list / dropdown down   |
+| `ArrowUp`     | Navigate list / dropdown up     |
+| `ArrowLeft`   | Move cursor left / prev slide   |
+| `ArrowRight`  | Move cursor right / next slide  |
+| `Backspace`   | Delete character before cursor  |
+| `Delete`      | Delete character after cursor   |
+
+### Examples
+
+```bash
+# Submit a search form
+paw type "#search" "query"
+paw keypress Enter
+
+# Navigate a dropdown with the keyboard
+paw click "#dropdown"
+paw keypress ArrowDown
+paw keypress ArrowDown
+paw keypress Enter
+
+# Close a modal
+paw keypress Escape
+```
+
+<Tip>
+  Chain `paw type` and `paw keypress Enter` instead of hunting for the submit button — it's faster and mirrors natural user behaviour.
+</Tip>

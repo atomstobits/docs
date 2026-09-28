@@ -1,0 +1,90 @@
+---
+title: "paw log: Stream Page Console and Network Events"
+sidebarTitle: "paw log"
+description: "paw log dumps the page's console messages, fetch requests, XHR calls, and errors. Filter by time, type, or HTTP status to debug your automation."
+---
+
+`paw log` streams the page's runtime log — everything the browser has observed since the current page loaded. This includes `console.log` output, `console.error` calls, outgoing `fetch` and XHR requests (with their HTTP status codes), and JavaScript exceptions. Use it to debug why an automation step failed, inspect API responses, or verify that an action triggered the expected network call.
+
+`paw log` is a **pass-through command** — it reads and prints the buffered log instantly with no cursor animation.
+
+## Syntax
+
+```bash
+paw log [--since <duration>] [--type <type>] [--status '<comparison>']
+```
+
+## Parameters
+
+<ParamField path="--since" type="string">
+  Only show log entries from the last N seconds. Accepts a duration string with a unit suffix, e.g. `5s`, `30s`, `2m`. If omitted, all entries since page load are shown.
+</ParamField>
+
+<ParamField path="--type" type="string">
+  Filter entries by event type. Supported values:
+
+  | Value     | Description                                      |
+  |-----------|--------------------------------------------------|
+  | `console` | `console.log`, `console.warn`, `console.info`    |
+  | `error`   | `console.error` and uncaught JS exceptions       |
+  | `fetch`   | `fetch()` API requests and responses             |
+  | `xhr`     | `XMLHttpRequest` calls                           |
+</ParamField>
+
+<ParamField path="--status" type="string">
+  Filter `fetch` and `xhr` entries by HTTP status code. Accepts a comparison expression in single quotes:
+
+  | Expression  | Matches                         |
+  |-------------|----------------------------------|
+  | `'>=400'`   | Client and server errors (4xx, 5xx) |
+  | `'==200'`   | Only 200 OK responses           |
+  | `'<300'`    | All successful responses        |
+</ParamField>
+
+## Examples
+
+```bash
+paw log                        # all events since page load
+paw log --since 10s            # last 10 seconds of events
+paw log --type error           # only errors and exceptions
+paw log --type fetch --status '>=400'   # failed requests only
+paw log --type console         # console.log / console.warn output
+paw log --type xhr             # XHR calls only
+```
+
+<CodeGroup>
+```bash Debug a failing action
+# Check what happened in the last 5 seconds
+paw log --since 5s
+
+# Look for errors
+paw log --type error
+```
+
+```bash Inspect API calls
+# See all fetch requests
+paw log --type fetch
+
+# Find broken API calls
+paw log --type fetch --status '>=400'
+
+# Confirm a successful POST
+paw log --type fetch --status '==200'
+```
+
+```bash Read console output
+# See what the page is logging
+paw log --type console
+
+# Look at recent console output only
+paw log --type console --since 30s
+```
+</CodeGroup>
+
+<Note>
+  `paw log` shows the **page's own** console and network activity. It is distinct from `~/.pawprint`, which is PAW's own action audit log (recording the PAW commands you ran and when). Use `~/.pawprint` to review your automation history; use `paw log` to inspect the page's behaviour.
+</Note>
+
+<Tip>
+  Run `paw log --type error` immediately after a `paw click` or `paw eval` that produces unexpected behaviour. JavaScript exceptions are often the fastest way to diagnose what went wrong.
+</Tip>

@@ -1,0 +1,117 @@
+---
+title: "PAW Cursor Animation: Visible AI Actions"
+sidebarTitle: "Cursor Animation"
+description: "Every PAW click walks a visible cursor to the target along a Bézier curve. Understand speed presets, the animation sequence, and when animations are skipped."
+---
+
+PAW is built on a single design principle: **AI actions should be observable by humans.** When an AI agent drives your browser invisibly, you lose the ability to catch mistakes, build trust, or understand what went wrong. PAW solves this by injecting a visible animated cursor into every page it controls — so you can watch, follow, and intervene in real time.
+
+## The Animation Sequence
+
+For every mouse interaction, PAW runs a five-step animation sequence before the real CDP event fires. The browser page is never touched without this visible preamble.
+
+<Steps>
+  <Step title="Cursor walks to target">
+    PAW's injected SVG cursor travels from its current position to the center
+    of the target element along a **Bézier curve**. The arc is smooth and
+    slightly varied — not a robotic straight line — so the motion reads as
+    intentional to human observers.
+  </Step>
+  <Step title="Element highlighted">
+    Once the cursor arrives, the target element receives an **orange outline**.
+    This makes it unambiguous which element is about to be acted on, even on
+    dense pages with many interactive elements.
+  </Step>
+  <Step title="Press shrink">
+    The cursor visually scales down — a "press" animation that signals the
+    click is imminent. This gives anyone watching a clear one-beat warning
+    before the action fires.
+  </Step>
+  <Step title="CDP event fires">
+    PAW sends the real `Input.dispatchMouseEvent` (or equivalent) CDP command
+    to the browser. This is the event the page actually receives.
+  </Step>
+  <Step title="Cleanup and pause">
+    The orange highlight is removed. PAW waits a short settling delay before
+    processing the next command, giving the page time to react visibly before
+    the next action begins.
+  </Step>
+</Steps>
+
+## Speed Presets
+
+You control animation timing with the `--speed` flag or the `PAW_SPEED` environment variable. Three presets are available:
+
+| Preset   | Total Time | Best For                            |
+| -------- | ---------- | ----------------------------------- |
+| `fast`   | ~280 ms    | AI batch work, high-volume tasks    |
+| `normal` | ~1.4 s     | Default — comfortable for humans to follow |
+| `slow`   | ~3.5 s     | Demos, screen recordings, training videos |
+
+```bash
+# Run at fast speed for this command only
+paw click 3 --speed fast
+
+# Set a default speed for all commands in this shell session
+export PAW_SPEED=slow
+paw click 3
+```
+
+## Commands With Animation
+
+The following commands trigger the full Bézier-cursor animation sequence before acting:
+
+<CardGroup cols={2}>
+  <Card title="paw click" icon="arrow-pointer">
+    Single left-click on an element or coordinate.
+  </Card>
+  <Card title="paw dblclick" icon="computer-mouse">
+    Double-click, with the cursor walking to the target first.
+  </Card>
+  <Card title="paw rightclick" icon="ellipsis">
+    Right-click to open a context menu.
+  </Card>
+  <Card title="paw hover" icon="hand">
+    Move the cursor to an element without clicking (triggers hover states).
+  </Card>
+  <Card title="paw drag" icon="arrows-up-down-left-right">
+    Click-hold, animate to destination, release.
+  </Card>
+  <Card title="paw type" icon="keyboard">
+    Walk cursor to the input, click to focus, then type each character.
+  </Card>
+</CardGroup>
+
+## Pass-Through Commands (No Animation)
+
+Some PAW commands operate at the browser or page level rather than simulating physical input. These run instantly with no cursor movement:
+
+| Command         | What it does                                        |
+| --------------- | --------------------------------------------------- |
+| `paw goto`      | Navigates to a URL via CDP                          |
+| `paw eval`      | Executes JavaScript in the page context             |
+| `paw wait`      | Pauses for a fixed duration                         |
+| `paw wait-idle` | Waits until the page network is idle                |
+| `paw log`       | Streams the page's console and network events       |
+| `paw snapshot`  | Queries the DOM for interactive elements            |
+
+These commands bypass the animation pipeline entirely — they are not mouse actions, so no cursor walk is needed or appropriate.
+
+## Why Normal Speed by Default?
+
+Tools like `ghost-cursor` are designed to mimic human motion in order to evade bot detection. PAW's cursor serves the opposite purpose: it is designed to **inform** humans, not deceive websites.
+
+The `normal` preset (~1.4 s per action) is the default because it is the speed at which a human watching the screen can:
+
+- Track which element is being targeted
+- Read the orange highlight before the click fires
+- Press **Alt+drag** to redirect the AI mid-task if something looks wrong
+
+Slowing down slightly in exchange for human oversight is a deliberate trade-off. You are always free to switch to `fast` once you trust the workflow.
+
+<Tip>
+  For AI batch processing where you don't need a human watching in real time,
+  use `paw batch` with `--speed fast`. Batch mode runs all actions in a single
+  CDP WebSocket session, making it both faster and more efficient than issuing
+  individual CLI commands.
+</Tip>

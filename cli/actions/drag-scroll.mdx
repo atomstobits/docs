@@ -1,0 +1,122 @@
+---
+title: "paw drag and paw scroll: Drag-and-Drop and Scrolling"
+sidebarTitle: "Drag & Scroll"
+description: "paw drag animates a drag-and-drop between two elements. paw scroll fires wheel events at the cursor position. Both dispatch real CDP input events."
+---
+
+`paw drag` and `paw scroll` are animated commands for pointer-driven spatial interactions. `paw drag` holds the mouse button down while walking the cursor along a Bézier curve — producing the same `mousemove` event stream a real drag gesture generates. `paw scroll` fires wheel events at the current cursor position, scrolling the element under the cursor just as a physical scroll wheel would.
+
+---
+
+## paw drag
+
+### Syntax
+
+```bash
+paw drag <src> <tgt>
+```
+
+### Parameters
+
+<ParamField path="src" type="number | string" required>
+  The source element to pick up. Pass an integer index from `paw snapshot`, or a CSS selector string.
+</ParamField>
+
+<ParamField path="tgt" type="number | string" required>
+  The drop target element. Pass an integer index from `paw snapshot`, or a CSS selector string.
+</ParamField>
+
+### Drag sequence
+
+<Steps>
+  <Step title="Move to source">
+    The cursor walks to the center of the source element along a Bézier curve.
+  </Step>
+  <Step title="Press">
+    `Input.dispatchMouseEvent` fires with `type: mousePressed`, holding the left button down.
+  </Step>
+  <Step title="Bézier walk to target">
+    The cursor travels from the source to the target along another Bézier curve, dispatching a stream of `mouseMoved` events with the button held throughout. This is what triggers drag-aware components.
+  </Step>
+  <Step title="Release">
+    `Input.dispatchMouseEvent` fires with `type: mouseReleased` over the target element, completing the drop.
+  </Step>
+</Steps>
+
+### Examples
+
+```bash
+paw drag 3 7                  # drag element [3] onto element [7]
+paw drag ".item" ".dropzone"  # drag by CSS selector
+```
+
+<CodeGroup>
+```bash By index
+paw drag 2 9
+```
+
+```bash By selector
+paw drag ".kanban-card" ".kanban-column-done"
+paw drag "[data-id='file-1']" ".upload-target"
+```
+</CodeGroup>
+
+---
+
+## paw scroll
+
+### Syntax
+
+```bash
+paw scroll <up|down|left|right> [px]
+```
+
+### Parameters
+
+<ParamField path="direction" type="string" required>
+  The scroll direction. One of `up`, `down`, `left`, or `right`.
+</ParamField>
+
+<ParamField path="px" type="number">
+  How many pixels to scroll. Defaults to `300` if not specified.
+</ParamField>
+
+### How it works
+
+`paw scroll` fires a `wheel` event at the current cursor position. The scroll is applied to whichever element is under the cursor at that moment, so use `paw move` or `paw hover` first if you need to scroll a specific container rather than the page body.
+
+### Examples
+
+```bash
+paw scroll down               # scroll down 300px (default)
+paw scroll down 500           # scroll down 500px
+paw scroll up 200             # scroll up 200px
+paw scroll right 100          # scroll right 100px
+paw scroll left 150           # scroll left 150px
+```
+
+<Tip>
+  To scroll a nested container (e.g., a sidebar list), first move the cursor over it with `paw hover <n|sel>`, then call `paw scroll`.
+
+  ```bash
+  paw hover "#sidebar-list"
+  paw scroll down 400
+  ```
+</Tip>
+
+---
+
+## Composing Multi-Segment Drags with Primitives
+
+For drag paths that need to visit intermediate waypoints — slider tracks, canvas drawing, sortable lists with scroll — use the lower-level cursor primitives `paw move`, `paw press`, `paw moveby`, and `paw release` to build the path manually.
+
+```bash
+# Pick up from (100, 305), pass through two waypoints, then drop
+paw move 100 305
+paw press
+paw move 250 200           # mid-drag waypoint
+paw move 350 200           # second waypoint
+paw release
+```
+
+Every `paw move` call after `paw press` dispatches `mouseMoved` with the button held, so drag-aware components see a continuous pointer stream. See [Cursor Primitives](/cli/actions/cursor-primitives) for the full reference.

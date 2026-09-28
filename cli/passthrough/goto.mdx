@@ -1,0 +1,67 @@
+---
+title: "paw goto: Navigate to a URL"
+sidebarTitle: "paw goto"
+description: "paw goto navigates the browser to a URL using CDP Page.navigate and waits for the page load event before returning."
+---
+
+`paw goto` is the entry point for most PAW automation scripts. It sends a `Page.navigate` command via CDP, then blocks until the page's `load` event fires — so the next command in your script always runs against a fully-loaded document. Because it dispatches directly through CDP rather than driving the address bar, it works identically regardless of which Chromium-based browser you are connected to.
+
+## Syntax
+
+```bash
+paw goto <url>
+```
+
+## Parameters
+
+<ParamField path="url" type="string" required>
+  The fully-qualified URL to navigate to. Include the scheme (`https://` or `http://`).
+</ParamField>
+
+## How it works
+
+`paw goto` calls `Page.navigate` via CDP and waits for the `Page.loadEventFired` notification before returning control to your script. This means:
+
+- The command **blocks** until the browser considers the page loaded.
+- Script execution resumes only when the initial HTML, synchronous scripts, and stylesheets have all finished processing.
+- It does **not** wait for asynchronous XHR/fetch requests or client-side rendering that happens after `load` — use `paw wait-idle` and `paw wait` for those.
+
+`paw goto` is a **pass-through command** — it fires instantly with no cursor animation.
+
+## Examples
+
+```bash
+paw goto https://github.com
+paw goto https://app.example.com/dashboard
+paw goto http://localhost:3000
+```
+
+<CodeGroup>
+```bash Public URL
+paw goto https://news.ycombinator.com
+```
+
+```bash App with auth
+# Ensure your browser session is already logged in before navigating
+paw goto https://app.example.com/dashboard
+```
+
+```bash Local dev server
+paw goto http://localhost:5173
+```
+</CodeGroup>
+
+<Tip>
+  Follow `paw goto` with `paw wait-idle` if the page bootstraps asynchronously after `load` — common in React, Vue, and Angular SPAs:
+
+  ```bash
+  paw goto https://app.example.com
+  paw wait-idle 1000            # wait for SPA hydration
+  paw wait "#main-content"      # wait for the key element
+  paw snapshot
+  ```
+</Tip>
+
+<Note>
+  If the URL requires authentication, make sure your connected browser session is already logged in. `paw goto` does not handle login flows — navigate manually in the browser first, or script the login using `paw type` and `paw click` before calling `paw goto` on protected pages.
+</Note>

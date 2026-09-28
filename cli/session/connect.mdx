@@ -1,0 +1,86 @@
+---
+title: "paw connect: Attach to a Running Browser"
+sidebarTitle: "paw connect"
+description: "paw connect attaches PAW to a Chromium browser already running with --remote-debugging-port. Optionally filters by URL substring to target a specific tab."
+---
+
+`paw connect` lets you attach PAW to a Chromium-based browser that is **already running** with the CDP remote debugging port open. This is the right command when you launched the browser yourself, when another tool started it, or when you want to re-attach to a session after restarting PAW without closing the browser. On success, `paw connect` writes the session's WebSocket URL to `~/.paw`, making it available to all subsequent PAW commands.
+
+## Syntax
+
+```bash
+paw connect [<url-substring>] [--port <port>]
+```
+
+## Parameters
+
+<ParamField path="url-substring" type="string">
+  An optional string used to filter which open tab PAW attaches to. PAW inspects every tab's URL and selects the first one that contains this substring (case-insensitive). When omitted, PAW attaches to the first available tab.
+</ParamField>
+
+<ParamField query="--port" type="number" default="9222">
+  The CDP remote debugging port the target browser is listening on. This must match the `--remote-debugging-port` value the browser was started with.
+</ParamField>
+
+## When to use `paw connect`
+
+Use `paw connect` instead of `paw start` when:
+
+- You launched the browser manually (e.g. from the terminal or a script).
+- A CI/CD pipeline or another automation tool already started the browser.
+- You want to attach to a long-running browser instance without restarting it.
+- The browser was already open on the correct debug port and you just restarted your PAW script.
+
+<Note>
+  The target browser **must** have been started with `--remote-debugging-port`. If the browser is running without this flag, PAW cannot attach to it. You will need to restart the browser with the flag, or use `paw start` to launch a fresh instance.
+</Note>
+
+## Launching a browser manually with the debug port
+
+If you need to start Chrome or Edge yourself before running `paw connect`, use one of the following:
+
+<CodeGroup>
+
+```bash macOS
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222
+```
+
+```bash Linux
+google-chrome --remote-debugging-port=9222
+```
+
+```bash Windows (PowerShell)
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222
+```
+
+</CodeGroup>
+
+## Examples
+
+<CodeGroup>
+
+```bash Connect to first available tab
+paw connect
+```
+
+```bash Connect to a tab by URL substring
+paw connect github
+```
+
+```bash Connect on a custom port
+paw connect --port 9333
+```
+
+```bash Connect to a specific tab on a custom port
+paw connect dashboard --port 9333
+```
+
+</CodeGroup>
+
+<Tip>
+  If you have multiple tabs open, passing a `url-substring` is the most reliable way to ensure PAW targets the right one. For example, `paw connect app.example.com` will skip any unrelated tabs and attach directly to your application.
+</Tip>
+
+<Warning>
+  Running `paw connect` when `~/.paw` already contains an active session will overwrite it. If you are managing multiple sessions, track each browser's port separately and pass `--port` explicitly to every PAW command.
+</Warning>

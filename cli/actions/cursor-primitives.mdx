@@ -1,0 +1,138 @@
+---
+title: "Cursor Primitives: Composable Cursor Control"
+sidebarTitle: "Cursor Primitives"
+description: "paw move, paw moveby, paw press, and paw release are low-level cursor primitives. Compose them to build custom drag paths or interactions not covered by high-level commands."
+---
+
+When high-level commands like `paw click` and `paw drag` don't cover your use case, compose these primitives. They give you direct control over cursor position and mouse button state, letting you build any pointer interaction: multi-segment drags, canvas drawing, lasso selection, slider scrubbing, and more.
+
+Each primitive dispatches a real CDP `Input.dispatchMouseEvent` and uses the same Bézier animation engine as the high-level commands — so your movements still look human.
+
+---
+
+## paw move
+
+### Syntax
+
+```bash
+paw move <x> <y>
+```
+
+### Parameters
+
+<ParamField path="x" type="number" required>
+  Absolute horizontal position in viewport pixels (measured from the left edge).
+</ParamField>
+
+<ParamField path="y" type="number" required>
+  Absolute vertical position in viewport pixels (measured from the top edge).
+</ParamField>
+
+### How it works
+
+`paw move` walks the cursor from its current position to `(x, y)` along a Bézier curve. If the press flag is currently set (i.e., `paw press` was called earlier in the session), each step along the curve dispatches `mouseMoved` with the button held — enabling continuous drag tracking.
+
+---
+
+## paw moveby
+
+### Syntax
+
+```bash
+paw moveby <dx> <dy>
+```
+
+### Parameters
+
+<ParamField path="dx" type="number" required>
+  Horizontal offset in pixels, relative to the cursor's current position. Negative values move left.
+</ParamField>
+
+<ParamField path="dy" type="number" required>
+  Vertical offset in pixels, relative to the cursor's current position. Negative values move up.
+</ParamField>
+
+### How it works
+
+`paw moveby` is a convenience wrapper around `paw move` that calculates the absolute target from the current cursor position plus the given delta. It obeys the same press-flag logic: button is held if `paw press` is active.
+
+---
+
+## paw press and paw release
+
+### Syntax
+
+```bash
+paw press [--right|--middle]
+paw release
+```
+
+### Parameters
+
+<ParamField path="--right" type="flag">
+  Hold down the right mouse button instead of the left.
+</ParamField>
+
+<ParamField path="--middle" type="flag">
+  Hold down the middle mouse button instead of the left.
+</ParamField>
+
+### How it works
+
+`paw press` fires `Input.dispatchMouseEvent` with `type: mousePressed` at the current cursor position and sets a **persistent press flag** in the page-side state stored in `~/.paw`. The flag survives across separate `paw` invocations — you can call `paw press` in one terminal command, then `paw move` in the next, and the cursor will move with the button held.
+
+`paw release` fires `mouseReleased` at the current cursor position and clears the press flag.
+
+<Warning>
+  If your script exits unexpectedly while the press flag is set, the button will remain virtually held down. Run `paw release` to clear it before continuing.
+</Warning>
+
+---
+
+## Example: Multi-Segment Drag
+
+Route a drag through two intermediate waypoints before dropping:
+
+```bash
+paw move 100 305
+paw press
+paw move 250 200           # first waypoint — button held
+paw move 350 200           # second waypoint — button still held
+paw release                # drop
+```
+
+---
+
+## Example: Lasso Select
+
+Draw a rectangular lasso selection across a canvas:
+
+```bash
+paw move 50 50             # top-left corner of lasso
+paw press
+paw moveby 300 0           # drag right along top edge
+paw moveby 0 200           # drag down along right edge
+paw moveby -300 0          # drag left along bottom edge
+paw release                # complete the lasso
+```
+
+---
+
+## Example: Scrubbing a Range Slider
+
+Move to the slider track's left edge, press, then walk to a specific position:
+
+```bash
+paw move 120 440           # left end of slider track
+paw press
+paw move 320 440           # drag to target value
+paw release
+```
+
+<Note>
+  All `paw move` and `paw moveby` calls made after `paw press` dispatch `mouseMoved` with the button held. This is what enables continuous drag operations — the target element receives a live pointer stream, not just a start and end event.
+</Note>
+
+<Tip>
+  Use `paw snapshot` to look up the pixel coordinates of elements before writing a primitive sequence. The snapshot output includes bounding-box data for every indexed element.
+</Tip>

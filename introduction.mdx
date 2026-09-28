@@ -1,0 +1,67 @@
+---
+title: "PAW: AI's Body in the Browser"
+sidebarTitle: "Introduction"
+description: "PAW (Physical Agent Worker) is a zero-dependency CLI that gives AI agents a visible animated cursor in your browser, with human-in-the-loop shared control via Alt+drag."
+---
+
+PAW (Physical Agent Worker) is a CLI tool that gives your AI agent a physical presence in a real Chromium browser — a smooth, Bézier-curve animated cursor that you can watch in real time. Instead of hiding automation behind headless processes, PAW puts every click, hover, and navigation on-screen so a human supervisor can follow along, audit the log, and even grab the wheel mid-task with a simple Alt+drag.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Up and running in 5 minutes
+  </Card>
+  <Card title="How PAW Works" icon="brain" href="/concepts/how-paw-works">
+    Understand the cursor, session, and audit model
+  </Card>
+  <Card title="AI Agent Integration" icon="robot" href="/guides/ai-agent-integration">
+    Connect PAW to your AI agent workflow
+  </Card>
+  <Card title="CLI Reference" icon="terminal" href="/cli/session/start">
+    Every command, every flag
+  </Card>
+</CardGroup>
+
+## Why PAW?
+
+Most browser automation tools are built to be invisible — to slip past bot-detection and mimic human behaviour well enough that no one notices. PAW takes the opposite stance: it is built to be **seen**. That shift in philosophy unlocks three properties that matter when AI is acting on your behalf.
+
+### 1. Visible Cursor — Trust Through Visibility
+
+PAW renders an animated cursor directly in the browser using the Chrome DevTools Protocol. Every move follows a natural Bézier curve; every click includes a press-shrink animation and a subtle element highlight. At around **1.4 seconds per click** — normal human cadence — the AI moves slowly enough for you to follow and understand what it is doing before it does it.
+
+You are not watching a replay after the fact. You are watching it happen.
+
+### 2. Audit Log (`~/.pawprint`)
+
+Every action PAW takes — clicks, hovers, evaluations, screenshots, navigations — is recorded as a timestamped entry in `~/.pawprint` on your local machine. No data leaves your machine unless you explicitly configure a remote server, in which case PAW will `PUT` a structured event payload to the URL you provide. The audit log is append-only and human-readable, giving you a ground-truth record of exactly what the agent did in your browser.
+
+### 3. Human-in-the-Loop Control
+
+PAW is designed for **shared control**. At any moment, you can hold Alt and drag the cursor to physically redirect the agent. The agent's next action will resume from wherever you placed the cursor. This makes PAW practical for workflows where you want the agent to do most of the work but need to be able to intervene without stopping the session entirely.
+
+## PAW vs. `ghost-cursor`
+
+If you have used `ghost-cursor`, the distinction is worth spelling out clearly:
+
+| | `ghost-cursor` | PAW |
+|---|---|---|
+| **Goal** | Fool websites into thinking a bot is human | Let humans see exactly what the AI is doing |
+| **Cursor** | Simulated, invisible to the user | Rendered on-screen in real Chromium |
+| **Audit log** | None | `~/.pawprint`, optionally synced to a remote server |
+| **Human control** | Not applicable | Alt+drag redirects the agent mid-task |
+| **Dependencies** | Puppeteer / Playwright required | Zero runtime dependencies |
+
+`ghost-cursor` is the right tool when you need stealth. PAW is the right tool when you need **accountability**.
+
+## Quick Example
+
+Get a browser session running and make your first AI-controlled click in four commands:
+
+```bash
+npm i -g paw-core
+paw start brave --url https://example.com
+paw snapshot
+paw click 1
+```
+
+PAW launches Brave with `--remote-debugging-port`, discovers the interactive elements on the page, and clicks element `[1]` with a fully animated cursor — all at a deliberate ~1.4 s per click so you can watch every move.

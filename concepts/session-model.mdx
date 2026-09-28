@@ -1,0 +1,130 @@
+---
+title: "PAW Session Model: Connecting and Managing Browser State"
+sidebarTitle: "Session Model"
+description: "A PAW session connects to a running Chromium browser tab over CDP. Learn how session state is stored, how to switch tabs, and how to close sessions."
+---
+
+A PAW **session** is a persistent connection between the PAW CLI and a specific tab in a running Chromium-family browser. Once a session is established, every PAW command — clicks, navigation, typing, snapshots — targets that same tab until you explicitly switch or close the session. Sessions are stored locally in `~/.paw` as a single WebSocket URL, making them lightweight and transparent.
+
+## Starting a Session
+
+You have two ways to create a session depending on whether you want PAW to launch the browser for you or connect to one that is already running.
+
+### Launch a new browser window
+
+```bash
+paw start [brave|chrome|edge] [--url <url>] [--port <port>]
+```
+
+PAW starts the specified browser with `--remote-debugging-port` (default `9222`), opens the optional `--url`, and writes the active tab's CDP WebSocket URL to `~/.paw`.
+
+```bash
+# Open Brave on GitHub
+paw start brave --url https://github.com
+
+# Open Chrome on a custom debug port
+paw start chrome --port 9333
+```
+
+### Connect to a running browser
+
+```bash
+paw connect [url-substring]
+```
+
+If you already have a Chromium browser running with `--remote-debugging-port`, use `paw connect` to attach to it. PAW queries the debug port for the list of open tabs and picks the first match.
+
+```bash
+# Connect to whichever tab is open (first tab found)
+paw connect
+
+# Connect to the tab whose URL contains "github"
+paw connect github
+```
+
+<Note>
+  Both `paw start` and `paw connect` overwrite `~/.paw` with the new session
+  URL. Running either command always makes that tab the active target for all
+  subsequent PAW commands.
+</Note>
+
+## Session State File
+
+`~/.paw` is a plain text file containing exactly one line: the CDP WebSocket URL of your active tab.
+
+```
+ws://127.0.0.1:9222/devtools/page/ABCD1234EFGH5678...
+```
+
+Every PAW command reads this file on startup. You never need to pass connection details as flags — if `~/.paw` exists and the browser is still running, PAW knows where to connect.
+
+<CardGroup cols={2}>
+  <Card title="File present" icon="circle-check">
+    PAW reads the WebSocket URL and connects immediately. No flags needed.
+  </Card>
+  <Card title="File missing" icon="circle-xmark">
+    PAW exits with an error and asks you to run `paw start` or `paw connect`
+    first.
+  </Card>
+</CardGroup>
+
+## Switching Tabs
+
+To retarget PAW to a different open tab, run `paw connect` with a URL substring matching the tab you want. PAW queries the debug port, finds the matching tab, and overwrites `~/.paw` with the new WebSocket URL.
+
+```bash
+# You currently have three tabs open:
+#   https://github.com/your-org/repo
+#   https://linear.app/your-team/issues
+#   https://docs.example.com
+
+# Switch to the Linear tab
+paw connect linear
+
+# Switch back to GitHub
+paw connect github
+```
+
+If multiple tabs match the substring, PAW selects the first match. Make your substring specific enough to be unambiguous.
+
+## Closing a Session
+
+```bash
+paw close
+```
+
+`paw close` deletes `~/.paw`. The browser and all its tabs keep running — PAW simply forgets which tab it was controlling. This is useful when you want to hand control back to a human without closing the browser, or before switching to a completely different browser instance.
+
+```bash
+# Done with automation — hand back to the human
+paw close
+
+# Confirm PAW no longer has a session
+cat ~/.paw   # No such file or directory
+```
+
+## Multiple Sessions
+
+PAW supports **one active session at a time** — a single `~/.paw` file pointing to a single tab. If you need to work across multiple tabs in sequence, use `paw connect <url-substring>` to hop between them:
+
+```bash
+# Work on tab A
+paw connect github
+paw snapshot
+paw click 5
+
+# Switch to tab B
+paw connect linear
+paw snapshot
+paw type 3 "fix: updated README"
+
+# Switch back to tab A
+paw connect github
+paw click 12
+```
+
+<Tip>
+  When running unattended AI workflows that span multiple tabs, add `paw
+  connect <substring>` as the first command in each task block to ensure PAW is
+  always targeting the right tab before it acts.
+</Tip>

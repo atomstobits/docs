@@ -1,0 +1,67 @@
+---
+title: "paw show: Scroll an Element into View"
+sidebarTitle: "paw show"
+description: "paw show scrolls a target element into the viewport using scrollIntoView. Accepts an element index number or a CSS selector or text substring."
+---
+
+`paw show` scrolls the browser so that a target element becomes visible in the viewport. It calls the browser's native `scrollIntoView` on the matched element, handling both vertical and horizontal scrolling as needed. Use it before interacting with elements that are outside the current view, or before calling `paw visible` when you need a specific element to be included in the results.
+
+## Syntax
+
+```bash
+paw show <text|selector>
+```
+
+## Parameters
+
+<ParamField path="target" type="string" required>
+  The element to scroll into view. PAW accepts three forms of target:
+
+  - **Element index** — a number from a recent `paw snapshot` or `paw visible` call (e.g. `5`).
+  - **CSS selector** — any valid CSS selector, quoted to avoid shell interpretation (e.g. `"#footer"`).
+  - **Text substring** — a string matched against each element's visible text content after normalizing whitespace (e.g. `"Privacy Policy"`).
+
+  When multiple elements match a text substring, PAW scrolls to the first match in document order.
+</ParamField>
+
+## Examples
+
+<CodeGroup>
+
+```bash Scroll by element index
+paw show 5
+```
+
+```bash Scroll by CSS selector
+paw show "#footer"
+```
+
+```bash Scroll by text substring
+paw show "Privacy Policy"
+```
+
+```bash Scroll to a heading
+paw show "h2"
+```
+
+</CodeGroup>
+
+## Combining with `paw visible`
+
+After scrolling, you can call `paw visible` to confirm the element is now in the viewport and to get its current index before interacting with it:
+
+```bash
+paw show "Accept cookies"     # scroll the banner into view
+paw visible                   # get updated index list
+paw click 2                   # click the now-visible button
+```
+
+This pattern is especially useful in AI agent loops where the agent discovers an element's text via `paw text` or `paw html` but needs to bring it into view before acting on it.
+
+<Tip>
+  When using a text substring as the target, match enough of the label to be unambiguous. For example, prefer `"Accept all cookies"` over `"Accept"` if the page contains multiple elements with "Accept" in their text.
+</Tip>
+
+<Note>
+  `paw show` scrolls the element into view but does not click or focus it. Follow it with the appropriate interaction command (`paw click`, `paw hover`, etc.) to act on the element.
+</Note>

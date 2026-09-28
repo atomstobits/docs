@@ -1,20 +1,47 @@
 ---
-title: "Introduction"
-description: "Welcome to your project"
+title: "PAW Documentation"
+description: "PAW (Physical Agent Worker) gives AI agents a visible, animated cursor in your browser. Human-in-the-loop control, audit logging, zero dependencies."
 ---
 
-Write a short description of your product here. What it does, who it's for, and what they can accomplish with it.
+Welcome to the PAW documentation. PAW (Physical Agent Worker) is a zero-dependency CLI that gives your AI agent a real, animated presence in a Chromium browser — every action is visible on-screen, logged locally, and interruptible by you at any moment. It is built for developers and teams who want AI browser automation they can actually watch and trust.
 
-<Tip>
-  Ready to make this your own? Start by editing this page. Update your `docs.json` file to customize your site. Then fill out the [Quickstart](/quickstart) page.
-</Tip>
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Up and running in 5 minutes
+  </Card>
+  <Card title="How PAW Works" icon="brain" href="/concepts/how-paw-works">
+    Understand the cursor, session, and audit model
+  </Card>
+  <Card title="AI Agent Integration" icon="robot" href="/guides/ai-agent-integration">
+    Connect PAW to your AI agent workflow
+  </Card>
+  <Card title="CLI Reference" icon="terminal" href="/cli/session/start">
+    Every command, every flag
+  </Card>
+</CardGroup>
 
-<Card title="Quickstart" icon="rocket" href="/quickstart">
-  This card links to the quickstart page in your project.
-</Card>
-<Card title="Components" icon="puzzle-piece" href="https://mintlify.com/docs/components">
-  Add cards, callouts, steps, tabs, and more to design and structure your pages.
-</Card>
-<Card title="Settings" icon="gear" href="https://mintlify.com/docs/organize/settings">
-  Set your site name, branding, and navigation in the `docs.json` file.
-</Card>
+## Get Started in Three Steps
+
+<Steps>
+  <Step title="Install PAW">
+    ```bash
+    npm i -g paw-core
+    ```
+    Requires Node.js 22 or later. Zero runtime dependencies — no browser downloads.
+  </Step>
+
+  <Step title="Launch a browser session">
+    ```bash
+    paw start brave --url https://example.com
+    ```
+    PAW connects to your existing Brave, Chrome, or Edge installation via the Chrome DevTools Protocol and renders an animated cursor in the live browser window.
+  </Step>
+
+  <Step title="Start automating">
+    ```bash
+    paw snapshot
+    paw click 1
+    ```
+    `paw snapshot` lists every interactive element on the page with a numeric index. `paw click 1` walks the cursor to that element along a Bézier curve and fires a real click — at human pace, on-screen, fully logged to `~/.pawprint`.
+  </Step>
+</Steps>

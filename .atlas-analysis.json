@@ -1,0 +1,134 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "PAW — Physical Agent Worker",
+  "projectDescription": "PAW is a zero-dependency CLI tool that gives AI agents a visible, animated cursor in a real browser via the Chrome DevTools Protocol, with human-in-the-loop shared control and a built-in audit log.",
+  "theme": "luma",
+  "primaryColor": "#ef7025",
+  "lightColor": "#eec9bc",
+  "darkColor": "#4fa1ab",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/how-paw-works",
+              "concepts/session-model",
+              "concepts/cursor-animation",
+              "concepts/audit-log"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/ai-agent-integration",
+              "guides/human-in-the-loop",
+              "guides/batch-commands",
+              "guides/proxy-and-cookies"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "CLI Reference",
+        "groups": [
+          {
+            "group": "Session",
+            "pages": [
+              "cli/session/start",
+              "cli/session/connect",
+              "cli/session/close"
+            ]
+          },
+          {
+            "group": "Perception",
+            "pages": [
+              "cli/perception/snapshot",
+              "cli/perception/visible",
+              "cli/perception/show",
+              "cli/perception/nearby",
+              "cli/perception/text-html"
+            ]
+          },
+          {
+            "group": "Actions",
+            "pages": [
+              "cli/actions/click",
+              "cli/actions/type",
+              "cli/actions/drag-scroll",
+              "cli/actions/cursor-primitives"
+            ]
+          },
+          {
+            "group": "Pass-Through",
+            "pages": [
+              "cli/passthrough/goto",
+              "cli/passthrough/eval",
+              "cli/passthrough/wait",
+              "cli/passthrough/log",
+              "cli/passthrough/dismiss-cookies"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Visible Bézier-curve animated cursor for every click — human can follow AI actions in real time",
+    "Human-in-the-loop shared control via Alt+drag to redirect AI mid-task",
+    "Append-only audit log at ~/.pawprint with optional HTTP PUT to any remote byte server",
+    "Zero runtime dependencies — uses native Node.js WebSocket, no Playwright, Puppeteer, or MCP",
+    "Raw Chrome DevTools Protocol (CDP) — connects to any existing Chromium-family browser",
+    "Element indexing with paw snapshot for token-efficient AI prompting",
+    "Batch mode (paw batch) to run many verbs in a single CDP session",
+    "Configurable speed presets: fast (~280ms), normal (~1.4s), slow (~3.5s)",
+    "11 built-in cookie consent manager (CMP) patterns via paw dismiss-cookies",
+    "Page logging (console, fetch, XHR, errors) via paw log"
+  ],
+  "publicApiSurface": [
+    "paw start [brave|chrome|edge] [--url U] [--port P]",
+    "paw connect [url-substring]",
+    "paw close",
+    "paw snapshot",
+    "paw visible",
+    "paw show <text|sel>",
+    "paw nearby [--radius N] [--limit N]",
+    "paw text <n|sel>",
+    "paw html [sel]",
+    "paw screenshot [path]",
+    "paw position",
+    "paw box <n|sel>",
+    "paw click <n|sel> [--right|--middle]",
+    "paw dblclick <n|sel>",
+    "paw rightclick <n|sel>",
+    "paw hover <n|sel>",
+    "paw type <n|sel> <text|@file|->",
+    "paw keypress <key>",
+    "paw drag <src> <tgt>",
+    "paw scroll <up|down|left|right> [px]",
+    "paw move <x> <y>",
+    "paw moveby <dx> <dy>",
+    "paw press [--right|--middle]",
+    "paw release",
+    "paw goto <url>",
+    "paw eval <expr|@file.js|->",
+    "paw wait <n|sel>",
+    "paw wait-idle [stableMs]",
+    "paw log [--since 5s] [--type T] [--status '>=N']",
+    "paw dismiss-cookies [--reject|--list]",
+    "paw batch [@file|-]",
+    "paw stay",
+    "paw unstay",
+    "paw help"
+  ]
+}

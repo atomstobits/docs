@@ -1,0 +1,109 @@
+---
+title: "paw click: Animated Browser Clicks"
+sidebarTitle: "paw click"
+description: "paw click walks the cursor to a target along a Bézier curve, highlights it, then fires a real CDP mouse event. Supports left, right, and middle mouse buttons."
+---
+
+`paw click` is PAW's primary interaction command. Rather than teleporting the cursor and dispatching a synthetic event, it walks the cursor to the target along a smooth Bézier curve, provides visual feedback, then fires a real `Input.dispatchMouseEvent` via CDP — making your automation indistinguishable from a human click.
+
+## Syntax
+
+```bash
+paw click <n|sel> [--right|--middle]
+paw dblclick <n|sel>
+paw rightclick <n|sel>
+paw hover <n|sel>
+```
+
+## Parameters
+
+<ParamField path="n|sel" type="number | string" required>
+  The target element. Pass an integer index from `paw snapshot`, or a CSS selector string (quoted if it contains spaces or special characters).
+</ParamField>
+
+<ParamField path="--right" type="flag">
+  Fire the click with the right mouse button instead of the left.
+</ParamField>
+
+<ParamField path="--middle" type="flag">
+  Fire the click with the middle mouse button (useful for opening links in a new tab).
+</ParamField>
+
+## Animation Sequence
+
+Every `paw click` runs the same choreographed sequence before the CDP event fires:
+
+<Steps>
+  <Step title="Bézier walk">
+    The cursor travels from its current position to the target element's center along a randomised cubic Bézier curve.
+  </Step>
+  <Step title="Highlight">
+    The target element receives a temporary orange outline so you can see exactly what PAW is about to click.
+  </Step>
+  <Step title="Press-shrink">
+    The cursor icon shrinks slightly, mirroring the visual press feedback you see in screen-recording tools.
+  </Step>
+  <Step title="CDP mouse event">
+    `Input.dispatchMouseEvent` fires with `type: mousePressed` followed by `mouseReleased` at the element's coordinates.
+  </Step>
+  <Step title="Cleanup">
+    The highlight outline is removed and PAW pauses briefly before returning, giving the page time to react.
+  </Step>
+</Steps>
+
+Speed for all animated actions is controlled by the global `--speed` flag (`fast` ≈ 280 ms, `normal` ≈ 1.4 s default, `slow` ≈ 3.5 s).
+
+## Variants
+
+### paw dblclick
+
+Fires a double-click at the target element using the same Bézier walk and highlight sequence, then dispatches two rapid `mousePressed` / `mouseReleased` pairs.
+
+### paw rightclick
+
+Fires a right-click and opens the browser's native context menu. Equivalent to `paw click <n|sel> --right`, but provided as a convenience alias.
+
+### paw hover
+
+Animates the cursor to the target element without pressing any mouse button. Use this to trigger CSS `:hover` states, reveal tooltip overlays, or expand dropdown menus before acting on their contents.
+
+## Examples
+
+```bash
+paw click 1                   # click element [1] by index
+paw click "#submit-btn"       # click by CSS selector
+paw click 3 --right           # right-click element [3]
+paw dblclick "h1"             # double-click the first h1
+paw hover 2                   # hover without clicking
+```
+
+<CodeGroup>
+```bash By index
+# Use the integer shown in `paw snapshot` output
+paw click 7
+paw dblclick 12
+```
+
+```bash By CSS selector
+# Quote selectors that contain #, ., spaces, or brackets
+paw click "#login-button"
+paw click ".nav-item:first-child"
+paw hover "[data-tooltip]"
+```
+
+```bash Right & middle buttons
+paw click 3 --right           # context menu
+paw click ".tab-link" --middle # open in new tab
+paw rightclick "#file-row"    # alias for --right
+```
+</CodeGroup>
+
+<Note>
+  For pass-through clicking with no animation, use `paw eval` to fire a JavaScript click event directly:
+
+  ```bash
+  paw eval "document.querySelector('#submit-btn').click()"
+  ```
+
+  This is useful in performance-sensitive scripts where animation overhead matters, but keep in mind it bypasses PAW's visual feedback and may behave differently on elements that listen for pointer events rather than `click`.
+</Note>
