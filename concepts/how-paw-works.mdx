@@ -1,7 +1,7 @@
 ---
-title: "How PAW Works: CDP, Sessions, and the Cursor"
+title: "How PAW Works: CDP, Browser Sessions, and the Cursor"
 sidebarTitle: "How PAW Works"
-description: "PAW connects to your existing browser over CDP, injects an animated SVG cursor, and executes every action with human-visible animation and a local audit trail."
+description: "PAW connects to your existing browser over CDP, injects an animated SVG cursor, and executes every action with human-visible animation and an audit trail."
 ---
 
 PAW is a zero-dependency CLI that drives your browser by speaking the same protocol your browser's own developer tools use. There are no bundled browser binaries, no Playwright runtimes, and no external packages — just your existing browser, a WebSocket, and PAW's Node.js process talking directly over the Chrome DevTools Protocol (CDP).
@@ -99,4 +99,4 @@ Every action PAW executes is appended to `~/.pawprint` with a timestamp, the com
 2025-01-15T10:32:04Z  goto     https://example.com ok
 ```
 
-You can tail it in real time, parse it in scripts, or mirror it to a remote HTTP server with `--log-url` for centralized review. See the [Audit Log](/concepts/audit-log) page for the full format and remote-mirroring setup.
+You can tail it in real time or parse it in scripts. See the [Audit Log](/concepts/audit-log) page for the full format and usage patterns.

@@ -1,12 +1,10 @@
 ---
-title: "paw type and paw keypress: Typing Into Inputs"
+title: "paw type and paw keypress: Typing Text Into Inputs"
 sidebarTitle: "paw type"
 description: "paw type clicks an input element and inserts text using CDP's Input.insertText. Accepts inline text, a file path, or stdin. paw keypress fires key events."
 ---
 
 Filling in forms is one of the most common automation tasks. `paw type` clicks the target input using PAW's animated cursor walk, then delivers the text atomically via CDP `Input.insertText`. When you need to trigger keyboard shortcuts or navigate UI components, `paw keypress` fires a single key event without any typing animation.
-
----
 
 ## paw type
 
@@ -70,8 +68,6 @@ cat report.md | paw type "#report-field" -
 <Note>
   `paw type` uses CDP `Input.insertText`, which inserts the full string **atomically**. It does not simulate keystroke-by-keystroke input, so per-character `keydown`/`keyup` events are not fired. For inputs that require those events, use `paw eval` with manual `KeyboardEvent` dispatch.
 </Note>
-
----
 
 ## paw keypress
 

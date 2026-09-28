@@ -1,7 +1,7 @@
 ---
-title: "paw start: Launch a Browser Session"
+title: "paw start: Launch Chromium with CDP Debugging Port"
 sidebarTitle: "paw start"
-description: "paw start launches Brave, Chrome, or Edge with the CDP debug port open and writes the session to ~/.paw. Flags: --url, --port."
+description: "paw start launches Brave, Chrome, or Edge with the CDP debug port open and writes the session to ~/.paw. Supports --url and --port flags."
 ---
 
 `paw start` opens a Chromium-based browser with the Chrome DevTools Protocol (CDP) remote debugging port enabled, waits until the browser is ready to accept connections, and writes the session's WebSocket URL to `~/.paw`. Once the session file exists, every subsequent PAW command knows which browser to talk to.

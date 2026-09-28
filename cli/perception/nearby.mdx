@@ -1,7 +1,7 @@
 ---
-title: "paw nearby: Elements Near the Cursor"
+title: "paw nearby: List Interactive Elements Near the Cursor"
 sidebarTitle: "paw nearby"
-description: "paw nearby returns interactive elements within a radius of the cursor position. Use --radius and --limit flags to tune results for token-efficient AI prompting."
+description: "paw nearby returns interactive elements within a pixel radius of the cursor. Tune results with --radius (default 200px) and --limit (default 10)."
 ---
 
 `paw nearby` returns a list of interactive elements whose bounding boxes fall within a given pixel radius of the current cursor position. It gives your AI agent a spatially scoped view of the page — only the elements that are locally relevant to where the cursor currently is, rather than the entire DOM or even the full viewport.

@@ -1,7 +1,7 @@
 ---
 title: "paw wait and paw wait-idle: Synchronize with Page State"
 sidebarTitle: "paw wait"
-description: "paw wait polls until an element appears; paw wait-idle blocks until network activity is quiet. Use them to synchronize AI actions with dynamic page loading."
+description: "paw wait polls until an element appears in the DOM; paw wait-idle blocks until network traffic is quiet. Both are pass-through with no animation."
 ---
 
 Dynamic pages — SPAs, React apps, dashboards with live data — update their DOM asynchronously. If you run `paw snapshot` or `paw click` before the content you care about has rendered, you'll get stale results or a "element not found" error. `paw wait` and `paw wait-idle` let you synchronize your script with the page before acting.

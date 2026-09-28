@@ -1,7 +1,7 @@
 ---
-title: "PAW Audit Log: Tracking Every AI Action"
+title: "PAW Audit Log: Track and Review Every AI Browser Action"
 sidebarTitle: "Audit Log"
-description: "PAW logs every browser action to ~/.pawprint as an append-only local audit trail, with optional HTTP PUT mirroring to any remote server for review agents."
+description: "PAW logs every browser action to ~/.pawprint as an append-only local audit trail. Learn how to read, search, and use the log for debugging and compliance."
 ---
 
 Every command PAW executes is logged. Before the CDP event fires, after it completes, the record exists — timestamped, labelled with the verb and target, and appended to a local file that PAW never deletes. This creates an immutable history of exactly what your AI agent did in your browser, giving you a foundation for debugging, compliance, and oversight.
@@ -64,40 +64,6 @@ Here is a representative sequence from a real session:
 
 Passwords and sensitive field values are masked as `"********"` in the log automatically.
 
-## Remote Mirroring (Optional)
-
-PAW can mirror every log entry to a remote HTTP server in real time by passing a `--log-url` flag or setting the `PAW_LOG_URL` environment variable. PAW sends each entry as an HTTP `PUT` request to the specified URL immediately after writing it locally.
-
-```bash
-# Mirror all entries to your logging server
-export PAW_LOG_URL=https://logs.your-team.com/paw
-
-paw click 3
-# → appends to ~/.pawprint
-# → PUT https://logs.your-team.com/paw  (body: the log entry)
-```
-
-Any HTTP server that accepts `PUT` requests with a plain-text body works. This enables several powerful patterns:
-
-<CardGroup cols={2}>
-  <Card title="Real-time review agents" icon="robot">
-    A second AI process watches the PUT stream and raises an alert if the first
-    AI takes any action outside its intended scope.
-  </Card>
-  <Card title="Centralized team audit trails" icon="building">
-    All agents on a team write to the same endpoint, giving you a unified log
-    of every automated browser action across the organization.
-  </Card>
-  <Card title="Custom logging backends" icon="server">
-    Route entries to Elasticsearch, a Postgres table, S3, or any custom
-    service — no PAW-specific plugin required.
-  </Card>
-  <Card title="Compliance archiving" icon="shield-check">
-    Retain tamper-evident records of automated browser activity for regulatory
-    or internal audit requirements.
-  </Card>
-</CardGroup>
-
 ## Use Cases
 
 **Debugging**
@@ -115,7 +81,7 @@ Regulated environments often require records of what automated processes did. `~
 
 **Review agents**
 
-Because every action is logged before it completes, a second process can watch the stream and intervene. Combine `--log-url` with a lightweight review service to build a two-AI system: one agent acts, one agent checks.
+Because every action is logged before it completes, a second process can watch the stream and intervene. Use `tail -f ~/.pawprint` to stream entries to a lightweight review process and build a two-AI system: one agent acts, one agent checks.
 
 <Note>
   The audit log at `~/.pawprint` is separate from the output of `paw log`.

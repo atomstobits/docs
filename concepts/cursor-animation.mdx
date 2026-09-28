@@ -1,7 +1,7 @@
 ---
-title: "PAW Cursor Animation: Visible AI Actions"
+title: "PAW Cursor Animation: How AI Actions Are Made Visible"
 sidebarTitle: "Cursor Animation"
-description: "Every PAW click walks a visible cursor to the target along a Bézier curve. Understand speed presets, the animation sequence, and when animations are skipped."
+description: "Every PAW click walks a visible cursor along a Bézier curve. Learn about speed presets, the full animation sequence, and which commands skip animation."
 ---
 
 PAW is built on a single design principle: **AI actions should be observable by humans.** When an AI agent drives your browser invisibly, you lose the ability to catch mistakes, build trust, or understand what went wrong. PAW solves this by injecting a visible animated cursor into every page it controls — so you can watch, follow, and intervene in real time.
@@ -80,6 +80,15 @@ The following commands trigger the full Bézier-cursor animation sequence before
   <Card title="paw type" icon="keyboard">
     Walk cursor to the input, click to focus, then type each character.
   </Card>
+  <Card title="paw scroll" icon="arrows-up-down">
+    Animate cursor to the target position, then scroll the page or element.
+  </Card>
+  <Card title="paw move" icon="location-dot">
+    Animate cursor to an absolute coordinate without clicking.
+  </Card>
+  <Card title="paw moveby" icon="arrows-up-down-left-right">
+    Animate cursor by a relative offset from its current position.
+  </Card>
 </CardGroup>
 
 ## Pass-Through Commands (No Animation)
@@ -94,6 +103,8 @@ Some PAW commands operate at the browser or page level rather than simulating ph
 | `paw wait-idle` | Waits until the page network is idle                |
 | `paw log`       | Streams the page's console and network events       |
 | `paw snapshot`  | Queries the DOM for interactive elements            |
+| `paw press`     | Holds a keyboard key down (no cursor involved)      |
+| `paw release`   | Releases a held keyboard key (no cursor involved)   |
 
 These commands bypass the animation pipeline entirely — they are not mouse actions, so no cursor walk is needed or appropriate.
 

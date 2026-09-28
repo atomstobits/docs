@@ -1,7 +1,7 @@
 ---
-title: "paw goto: Navigate to a URL"
+title: "paw goto: Navigate to Any URL Using CDP Page.navigate"
 sidebarTitle: "paw goto"
-description: "paw goto navigates the browser to a URL using CDP Page.navigate and waits for the page load event before returning."
+description: "paw goto navigates the browser to a URL via CDP Page.navigate and blocks until the page load event fires before returning control to your script."
 ---
 
 `paw goto` is the entry point for most PAW automation scripts. It sends a `Page.navigate` command via CDP, then blocks until the page's `load` event fires — so the next command in your script always runs against a fully-loaded document. Because it dispatches directly through CDP rather than driving the address bar, it works identically regardless of which Chromium-based browser you are connected to.

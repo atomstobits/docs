@@ -1,7 +1,7 @@
 ---
-title: "Human-in-the-Loop Browser Control with PAW"
+title: "Human-in-the-Loop Control for PAW Browser Automation"
 sidebarTitle: "Human-in-the-Loop"
-description: "Alt+drag your mouse to redirect PAW's cursor mid-task. AI commands pause while you hold the wheel and resume when you release, enabling seamless human override."
+description: "Alt+drag your mouse to redirect PAW's cursor mid-task. AI commands pause while you hold Alt and resume when you release, enabling seamless human override."
 ---
 
 PAW is built for scenarios where a human needs to stay in control while an AI handles routine browser tasks. Rather than running in a hidden headless window, PAW operates inside your real, visible browser — so you can watch every action as it happens and step in at any moment without stopping the automation entirely.
@@ -91,9 +91,5 @@ Every action is visible. Every click is telegraphed with a preview highlight. Ev
 When you can see exactly what the AI is doing, you can correct it early, learn from its mistakes, and build confidence in its behaviour over time. PAW treats visibility as a safety mechanism, not an obstacle to performance.
 
 <Tip>
-  For demos or recorded walkthroughs, use PAW with the `slow` speed preset to make actions maximally clear to your audience.
-
-  ```bash
-  paw set-speed slow
-  ```
+  For demos or recorded walkthroughs, use PAW with the `slow` speed preset to make actions maximally clear to your audience. Pass `--speed slow` to `paw start` when launching your session.
 </Tip>
